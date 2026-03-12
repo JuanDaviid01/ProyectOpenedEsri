@@ -5,14 +5,12 @@ import re
 import random
 from datetime import datetime
 import os
-
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 
 
 # almacenar estudiantes cargados
 estudiantes = {}
-
 
 def generar_pdf(nombre, cedula, cursos, creditos, radicado):
 
