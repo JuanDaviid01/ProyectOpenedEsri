@@ -2,35 +2,65 @@
 <html lang="es">
 
 <head>
-
   <meta charset="UTF-8">
   <title>Homologar Electiva</title>
-
   <link rel="stylesheet" href="../static/estilos.css">
-
 </head>
 
-<header class="barra-opened">
-  <div class="logo-capsula">
+<body>
 
-    <a href="https://opened.com.co/" target="_blank">
-      <img src="../static/opened.png" alt="Opened" class="logo-opened">
-    </a>
+  <header class="barra-opened">
+    <div class="logo-capsula">
+      <a href="https://opened.com.co/" target="_blank">
+        <img src="../static/opened.png" alt="Opened" class="logo-opened">
+      </a>
+    </div>
+  </header>
 
-  </div>
-</header>
-<div class="banner-homologacion">
 
-  <img src="../static/banner.png" alt="Homologación de Electivas">
+  <main class="contenedor-principal">
+    <section class="card-formulario">
+      <div class="encabezado-formulario">
+        <h1>HOMOLOGACION DE ELECTIVAS</h1>
+        <p>Ingrese el código del estudiante y cargue los archivos requeridos.</p>
+      </div>
 
-  <div class="banner-contenido">
+      <form class="formulario-radicado">
+        <div class="grupo-campo">
+          <label for="codigo_estudiante">Código del estudiante</label>
+          <input type="text" id="codigo_estudiante" name="codigo_estudiante" placeholder="Ingrese el código">
+        </div>
 
-    <input type="file" id="archivos" multiple hidden>
+        <div class="grupo-campo">
+          <label for="archivos">Cargar archivos</label>
+          <div class="zona-archivo">
+            <input type="file" id="archivos" name="archivos" multiple>
+            <label for="archivos" class="boton-cargar">Seleccionar archivos</label>
+            <span class="texto-archivo">Adjunte archivos en PDF, JPG o PNG</span>
+          </div>
+        </div>
 
-    <button class="btn-cargar" onclick="document.getElementById('archivos').click()">
-      Cargar certificados
-    </button>
+        <div class="grupo-campo">
+          <label>Archivos seleccionados</label>
+          <div class="lista-archivos">
+            <div class="archivo-item">No hay archivos cargados</div>
+          </div>
+        </div>
 
-  </div>
+        <div class="grupo-campo">
+          <label for="observaciones">Observaciones</label>
+          <textarea id="observaciones" name="observaciones" rows="4"
+            placeholder="Escriba una observación si aplica"></textarea>
+        </div>
 
-</div>
+        <div class="acciones-formulario">
+          <button type="button" class="btn-principal">Generar radicado</button>
+          <button type="button" class="btn-secundario">Descargar PDF</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+</body>
+
+</html>
