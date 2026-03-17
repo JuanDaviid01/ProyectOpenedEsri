@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+<meta charset="UTF-8">
+<title>Resolución</title>
+
+<style>
+
+body{
+font-family: "Times New Roman", serif;
+margin:80px;
+}
+
+h2{
+text-align:center;
+}
+
+.center{
+text-align:center;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
+
+th,td{
+border:1px solid black;
+padding:6px;
+text-align:center;
+font-size:14px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>Resolución No. {{ numero_resolucion }}</h2>
+
+<p class="center">{{ fecha_resolucion }}</p>
+
+<p>
+Por medio de la cual se autoriza la Homologación en el programa de Ingeniería de Sistemas y Telecomunicaciones.
+</p>
+
+<p>
+La Dirección del Programa de Ingeniería de Sistemas y Telecomunicaciones de la Facultad de Ciencias e Ingeniería de la Universidad de Manizales, en uso de sus facultades legales, estatutarias y reglamentarias.
+</p>
+
+<h3 class="center">Considerando</h3>
+
+<p>
+Que el estudiante <strong>{{ nombre_estudiante }}</strong> identificado con código estudiantil No.
+<strong>{{ codigo_estudiante }}</strong> ha solicitado la homologación.
+</p>
+
+<h3 class="center">Resuelve</h3>
+
+<p>
+<strong>Artículo Único:</strong> Homologar al estudiante <strong>{{ nombre_estudiante }}</strong>,
+identificado con código estudiantil <strong>{{ codigo_estudiante }}</strong>,
+las siguientes asignaturas:
+</p>
+
+<table>
+
+<tr>
+<th>Año</th>
+<th>Asignatura Opened</th>
+<th>Nota</th>
+<th>Nota definitiva</th>
+<th>Asignatura homologada</th>
+<th>Código</th>
+<th>Créditos</th>
+</tr>
+
+{% for curso in cursos %}
+
+<tr>
+<td>{{ curso.periodo }}</td>
+<td>{{ curso.asignatura_opened }}</td>
+<td>{{ curso.nota }}</td>
+<td>{{ curso.nota_definitiva }}</td>
+<td>{{ curso.asignatura_homologada }}</td>
+<td>{{ curso.codigo_asignatura }}</td>
+<td>{{ curso.creditos }}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+<p style="margin-top:20px">
+Comuníquese y cúmplase
+</p>
+
+<br><br>
+<div style="page-break-before: always;"></div>
+
+<h2 style="text-align:center; margin-top:120px;">
+</h2>
+
+<p style="margin-top:80px; line-height:1.8; text-align:justify;">
+    Por medio de la presente, el Centro de Educación a Distancia de la Universidad de Manizales
+    hace constar que: <strong>{{ nombre_estudiante }}</strong> estudiante de la Institución,
+    con número de documento: <strong>{{ documento_estudiante }}</strong>, realizó y aprobó el curso
+    Mooc: <strong>{{ nombre_curso }}</strong> con una nota final de:
+    <strong>{{ nota_curso }}</strong>, que se encuentra disponible en Opened,
+    plataforma de cursos virtuales de la Universidad.
+</p>
+
+<p style="margin-top:80px; line-height:1.8; text-align:justify;">
+    La presente se entrega a petición del estudiante a los
+    <strong>{{ dia_entrega }}</strong> días del mes de
+    <strong>{{ mes_entrega }}</strong> del
+    <strong>{{ anio_entrega }}</strong>.
+</p>
+
+
+</body>
+
+</html>
