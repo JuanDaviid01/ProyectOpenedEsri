@@ -8,10 +8,10 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
  
-def extraer_info_certificado_Opened(ruta_pdf):
+def extraer_info_certificado_Opened(archivo_stream):
     try:
-        doc = fitz.open(ruta_pdf)
-        # Extraemos texto de todas las páginas
+        # Leer desde memoria, no desde disco
+        doc = fitz.open(stream=archivo_stream, filetype="pdf")
         texto = ""
         for pagina in doc:
             texto += pagina.get_text("text")
@@ -90,59 +90,46 @@ def extraer_info_certificado_Esri(ruta_pdf):
     except Exception as e:
         return {"error": str(e)}
 
+@app.route('/')
+def index():
+    return render_template('index.html')
 @app.route('/api/extraer', methods=['POST'])
 def procesar_certificado():
     try:
-        data = request.get_json()
-        ruta_pdf = data.get('ruta')
-        tipo_cert = data.get('tipo')
+        # Validar si el request contiene archivos (multipart/form-data)
+        if 'archivos' not in request.files:
+            return jsonify({"error": "No se encontraron archivos en la petición."}), 400
 
-        if not ruta_pdf or not tipo_cert:
-            return jsonify({"error": "Parámetros insuficientes. Se requiere 'ruta' y 'tipo' en el payload JSON."}), 400
+        archivos = request.files.getlist('archivos')
+        tipo_cert = request.form.get('tipo') # El tipo ahora viene en el form-data
 
-        if tipo_cert.lower() == 'opened':
-            resultado = extraer_info_certificado_Opened(ruta_pdf)
-        elif tipo_cert.lower() == 'esri':
-            resultado = extraer_info_certificado_Esri(ruta_pdf)
-        else:
-            return jsonify({"error": "Tipo de parser no implementado."}), 400
-        # Validación de error interno en el parser
-        if "error" in resultado:
-            return jsonify(resultado), 500
+        if not tipo_cert:
+            return jsonify({"error": "Se requiere especificar el 'tipo' (opened o esri)."}), 400
 
-        return jsonify(resultado), 200
+        resultados_globales = []
+
+        for archivo in archivos:
+            archivo_stream = archivo.read()
+            
+            if tipo_cert.lower() == 'opened':
+                resultado = extraer_info_certificado_Opened(archivo_stream)
+            elif tipo_cert.lower() == 'esri':
+                resultado = extraer_info_certificado_Esri(archivo_stream)
+            else:
+                return jsonify({"error": f"Tipo de parser '{tipo_cert}' no implementado."}), 400
+
+            # Validar error interno de la función
+            if "error" in resultado:
+                return jsonify({"error": f"Error procesando {archivo.filename}: {resultado['error']}"}), 500
+
+            # Inyectar el nombre del archivo para mapear en el frontend
+            resultado['nombre_archivo'] = archivo.filename
+            resultados_globales.append(resultado)
+
+        return jsonify(resultados_globales), 200
 
     except Exception as e:
         return jsonify({"error": f"Excepción en servidor: {str(e)}"}), 500
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# ya extrae las notas de los certificados de Opened tengo que hacer otra funcion para los certificados de Esri
-
-
-
-
-
-
-
-# tengo que guardar los datos en variables para hacer comprobaciones de fecha, curso etc...
-
-# con diana tengo que gestionar el llamado a las funciones para que se ejecuten desde la interfaz que ella esta diseñando
-# https://gemini.google.com/app/687588a7b4006c90?is_sa=1&is_sa=1&android-min-version=301356232&ios-min-version=322.0&campaign_id=bkws&pt=9008&mt=8&ct=p-growth-sem-bkws&gad_campaignid=21991937965

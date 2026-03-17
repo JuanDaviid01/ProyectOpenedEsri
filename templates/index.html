@@ -17,7 +17,6 @@
     </div>
   </header>
 
-
   <main class="contenedor-principal">
     <section class="card-formulario">
       <div class="encabezado-formulario">
@@ -26,9 +25,20 @@
       </div>
 
       <form class="formulario-radicado">
+
         <div class="grupo-campo">
           <label for="codigo_estudiante">Código del estudiante</label>
           <input type="text" id="codigo_estudiante" name="codigo_estudiante" placeholder="Ingrese el código">
+        </div>
+
+        <!-- NUEVO CAMPO AQUI -->
+        <div class="grupo-campo">
+          <label for="tipo_certificado">Proveedor del Certificado</label>
+          <select id="tipo_certificado" name="tipo_certificado">
+            <option value="" selected disabled>Seleccionar proveedor</option>
+            <option value="opened">Opened</option>
+            <option value="esri">Esri</option>
+          </select>
         </div>
 
         <div class="grupo-campo">
@@ -54,13 +64,20 @@
         </div>
 
         <div class="acciones-formulario">
-          <button type="button" class="btn-principal">Generar radicado</button>
-          <button type="button" class="btn-secundario">Descargar PDF</button>
+          <button type="button" class="btn-principal">
+            Validar Documentos
+          </button>
+
+          <button type="button" class="btn-secundario" onclick="generarResolucion()">
+            Generar Resolucion
+          </button>
         </div>
+
       </form>
     </section>
   </main>
 
+  <script src="../static/app.js"></script>
 </body>
 
 </html>
