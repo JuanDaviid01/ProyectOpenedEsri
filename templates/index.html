@@ -25,13 +25,11 @@
       </div>
 
       <form class="formulario-radicado">
-
         <div class="grupo-campo">
           <label for="codigo_estudiante">Código del estudiante</label>
           <input type="text" id="codigo_estudiante" name="codigo_estudiante" placeholder="Ingrese el código">
         </div>
 
-        <!-- NUEVO CAMPO AQUI -->
         <div class="grupo-campo">
           <label for="tipo_certificado">Proveedor del Certificado</label>
           <select id="tipo_certificado" name="tipo_certificado">
@@ -64,15 +62,14 @@
         </div>
 
         <div class="acciones-formulario">
-          <button type="button" class="btn-principal">
+          <button type="button" id="btn-validar" class="btn-principal">
             Validar Documentos
           </button>
 
-          <button type="button" class="btn-secundario" onclick="generarResolucion()">
+          <button type="button" id="btn-generar" class="btn-secundario">
             Generar Resolucion
           </button>
         </div>
-
       </form>
     </section>
   </main>
