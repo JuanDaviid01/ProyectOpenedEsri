@@ -25,18 +25,57 @@ function renderizarLista() {
         return;
     }
 
-    archivosEnMemoria.forEach((archivo) => {
+    archivosEnMemoria.forEach((archivo, index) => {
         const nodoArchivo = document.createElement('div');
         nodoArchivo.className = 'archivo-item';
-        nodoArchivo.textContent = `${archivo.name} (${(archivo.size / 1024).toFixed(2)} KB)`;
+        // Flexbox inline para separar nombre y botón
+        nodoArchivo.style.display = 'flex';
+        nodoArchivo.style.justifyContent = 'space-between';
+        nodoArchivo.style.alignItems = 'center';
+        nodoArchivo.style.marginBottom = '5px';
+
+        const textoArchivo = document.createElement('span');
+        textoArchivo.textContent = `${archivo.name} (${(archivo.size / 1024).toFixed(2)} KB)`;
+
+        // Botón de eliminación con inyección de evento en el callback
+        const btnEliminar = document.createElement('button');
+        btnEliminar.type = 'button';
+        btnEliminar.innerHTML = '✕';
+        btnEliminar.style.color = 'red';
+        btnEliminar.style.background = 'none';
+        btnEliminar.style.border = 'none';
+        btnEliminar.style.cursor = 'pointer';
+        btnEliminar.style.fontWeight = 'bold';
+
+        btnEliminar.onclick = () => eliminarArchivo(index);
+
+        nodoArchivo.appendChild(textoArchivo);
+        nodoArchivo.appendChild(btnEliminar);
         listaArchivos.appendChild(nodoArchivo);
     });
+}
+
+function eliminarArchivo(index) {
+    // Mutación del array de estado
+    archivosEnMemoria.splice(index, 1);
+
+    // Invalida el estado de la validación anterior por seguridad transaccional
+    if (estudianteValidado) {
+        estudianteValidado = null;
+        alert("Atención: Al modificar los archivos, debe volver a Validar los Documentos.");
+    }
+
+    // Renderizado reactivo
+    renderizarLista();
 }
 
 // Validar documentos
 btnValidar.addEventListener('click', async () => {
     const codigoEstudiante = inputCodigo.value.trim();
-
+    if (archivosEnMemoria.length < 3) {
+        alert("Error: La normativa exige un mínimo de 3 certificados para este proceso.");
+        return;
+    }
     if (!codigoEstudiante) {
         alert("Error: Ingrese el código del estudiante.");
         return;
@@ -116,7 +155,10 @@ btnGenerar.addEventListener('click', async () => {
         alert("Primero debe validar los documentos antes de generar la resolución.");
         return;
     }
-
+    if (archivosEnMemoria.length < 3) {
+        alert("Error: La normativa exige un mínimo de 3 certificados para este proceso.");
+        return;
+    }
     if (!selectTipo.value) {
         alert("Seleccione el proveedor del certificado.");
         return;
@@ -134,15 +176,7 @@ btnGenerar.addEventListener('click', async () => {
         formData.append("tipo_certificado", selectTipo.value);
         formData.append(
             "resultados",
-            JSON.stringify(
-                estudianteValidado.certificados.map(cert => ({
-                    estudiante: estudianteValidado.nombre,
-                    curso: cert.curso,
-                    nota: cert.nota,
-                    fecha: cert.fecha,
-                    nombre_archivo: cert.archivo
-                }))
-            )
+            JSON.stringify(estudianteValidado.certificados)
         );
 
         archivosEnMemoria.forEach(archivo => {

@@ -2,7 +2,6 @@ import os
 import io
 import re
 import json
-import fitz
 import tempfile
 import locale
 from datetime import datetime
@@ -18,26 +17,15 @@ CORS(app)
 ARCHIVO_CONTADOR = "contador_resolucion.txt"
 
 def obtener_siguiente_resolucion(base_inicial=1048):
-    """
-    Lee el archivo local, incrementa el contador y lo sobrescribe.
-    """
-    # Si el archivo no existe, lo crea con la base inicial
     if not os.path.exists(ARCHIVO_CONTADOR):
         with open(ARCHIVO_CONTADOR, "w") as f:
             f.write(str(base_inicial))
         return str(base_inicial)
-    
-    # Lee el valor actual
     with open(ARCHIVO_CONTADOR, "r") as f:
         actual = int(f.read().strip())
-    
-    # Incrementa
     siguiente = actual + 1
-    
-    # Sobrescribe con el nuevo valor
     with open(ARCHIVO_CONTADOR, "w") as f:
         f.write(str(siguiente))
-        
     return str(siguiente)
 
 
@@ -58,20 +46,21 @@ def procesar_certificado():
 
         resultados_globales = []
         for archivo in archivos:
-            # Validación de payload vacío
             if archivo.filename == '':
                 continue
 
             archivo_stream = archivo.read()
-
-            # Delegación al dispatcher (Patrón Strategy)
             resultado = extractor_pdf.ejecutar_extractor(archivo_stream, tipo_certificado)
 
-            # Manejo de errores propagados desde el servicio
             if "error" in resultado:
+                return jsonify({"error": f"Error procesando {archivo.filename}: {resultado['error']}"}), 400
+
+            # --- NUEVA VALIDACIÓN DE INTEGRIDAD DEL CERTIFICADO ---
+            # Si campos críticos son "N/A", el documento es inválido para el proveedor seleccionado.
+            if resultado.get("estudiante") == "N/A" or resultado.get("curso") == "N/A":
                 return jsonify({
-                    "error": f"Error procesando {archivo.filename}: {resultado['error']}"
-                }), 400 # Cambiado a 400 (Bad Request) si el parser no existe
+                    "error": f"El archivo '{archivo.filename}' no es un certificado válido de {tipo_certificado.upper()} o es ilegible."
+                }), 400
 
             resultado["nombre_archivo"] = archivo.filename
             resultados_globales.append(resultado)
@@ -85,6 +74,7 @@ def procesar_certificado():
         return jsonify({"error": f"Excepción en servidor: {str(e)}"}), 500
 
 @app.route("/api/generar-resolucion-final", methods=["POST"])
+
 def generar_resolucion_final():
     try:
         if "archivos" not in request.files:
@@ -101,7 +91,14 @@ def generar_resolucion_final():
         resultados = json.loads(resultados_json)
         if not resultados:
             return jsonify({"error": "La lista de resultados está vacía."}), 400
+        if len(resultados) < 3:
+            return jsonify({
+                "error": f"Se requieren al menos 3 certificados válidos para homologar. El sistema solo procesó {len(resultados)}."
+            }), 400
 
+        if not resultados:
+            return jsonify({"error": "La lista de resultados está vacía."}), 400
+            
         primer_resultado = resultados[0]
         fecha_extraida = primer_resultado.get("fecha", "")
 
@@ -174,6 +171,7 @@ def generar_resolucion_final():
 
     except Exception as e:
         return jsonify({"error": f"Error generando resolución final: {str(e)}"}), 500
+
 @app.route("/descargar")
 def descargar_archivo():
     ruta = request.args.get("ruta")
