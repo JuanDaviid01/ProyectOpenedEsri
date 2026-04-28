@@ -6,7 +6,8 @@ const btnValidar = document.getElementById('btn-validar');
 const btnGenerar = document.getElementById('btn-generar');
 const inputCodigo = document.getElementById('codigo_estudiante');
 const selectTipo = document.getElementById('tipo_certificado');
-
+const inputResponsable = document.getElementById('responsable_resolucion');
+const selectPrograma = document.getElementById('programa_destino');
 // Cargar archivos en memoria
 inputArchivos.addEventListener('change', () => {
     Array.from(inputArchivos.files).forEach(archivo => {
@@ -74,6 +75,12 @@ btnValidar.addEventListener('click', async () => {
     const codigoEstudiante = inputCodigo.value.trim();
     if (archivosEnMemoria.length < 3) {
         alert("Error: La normativa exige un mínimo de 3 certificados para este proceso.");
+        return;
+    }
+    const responsableResolucion = inputResponsable.value.trim();
+
+    if (!responsableResolucion) {
+        alert("Error: Ingrese el responsable de la resolución.");
         return;
     }
     if (!codigoEstudiante) {
@@ -168,16 +175,18 @@ btnGenerar.addEventListener('click', async () => {
         alert("No hay archivos cargados para anexar.");
         return;
     }
+    if (!selectPrograma.value) {
+        alert("Error: Seleccione el programa de destino.");
+        return;
+    }
 
     try {
         // 2. Instanciación e hidratación del payload multipart
         const formData = new FormData();
         formData.append("codigo_estudiante", estudianteValidado.codigo);
         formData.append("tipo_certificado", selectTipo.value);
-        formData.append(
-            "resultados",
-            JSON.stringify(estudianteValidado.certificados)
-        );
+        formData.append("programa_destino", selectPrograma.value);
+        formData.append("resultados", JSON.stringify(estudianteValidado.certificados));
 
         archivosEnMemoria.forEach(archivo => {
             formData.append("archivos", archivo);

@@ -14,28 +14,38 @@ def cargar_plantilla():
     return Document(ruta)
 
 def reemplazar_texto_en_parrafo(paragraph, reemplazos):
-    if not paragraph.text.strip():
-        return
-
-    texto_original = paragraph.text
-    texto_nuevo = texto_original
+    if paragraph.text.strip():
+        for key in reemplazos:
+            if key in paragraph.text:
+                print(f"DEBUG: Clave '{key}' detectada en párrafo: '{paragraph.text[:50]}...'")
 
     for variable, valor in reemplazos.items():
         patron = r"\{\{\s*" + re.escape(variable) + r"\s*\}\}"
-        texto_nuevo = re.sub(patron, str(valor), texto_nuevo)
-
-    if texto_nuevo != texto_original:
-        paragraph.text = texto_nuevo
+        
+        match = re.search(patron, paragraph.text)
+        if match:
+            # print(f"DEBUG: Match exitoso para '{variable}'. Ejecutando reemplazo con '{valor}'")
+            paragraph.text = re.sub(patron, str(valor), paragraph.text)
 
 def reemplazar_texto_en_documento(doc, reemplazos):
-    for paragraph in doc.paragraphs:
-        reemplazar_texto_en_parrafo(paragraph, reemplazos)
+    for p in doc.paragraphs:
+        reemplazar_texto_en_parrafo(p, reemplazos)
 
-    for table in doc.tables:
-        for row in table.rows:
-            for cell in row.cells:
-                for paragraph in cell.paragraphs:
-                    reemplazar_texto_en_parrafo(paragraph, reemplazos)
+    for t in doc.tables:
+        for r in t.rows:
+            for c in r.cells:
+                for p in c.paragraphs:
+                    reemplazar_texto_en_parrafo(p, reemplazos)
+
+    for s in doc.sections:
+        for h in [s.header, s.footer]:
+            for p in h.paragraphs:
+                reemplazar_texto_en_parrafo(p, reemplazos)
+            for t in h.tables:
+                for r in t.rows:
+                    for c in r.cells:
+                        for p in c.paragraphs:
+                            reemplazar_texto_en_parrafo(p, reemplazos)
 
 def limpiar_filas_tabla(tabla, fila_inicial=2):
     while len(tabla.rows) > fila_inicial:

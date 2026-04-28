@@ -27,20 +27,27 @@ def normalizar_fecha(fecha_raw, formato_origen):
 
 def extraer_info_opened(archivo_stream):
     try:
-        # Context manager para liberar recursos de memoria en I/O
         with fitz.open(stream=archivo_stream, filetype="pdf") as doc:
             texto = "".join(pagina.get_text("text") for pagina in doc)
 
-        texto_limpio = re.sub(r"\s+", " ", texto)
+        texto_limpio = re.sub(r"\s+", " ", texto.replace('\xa0', ' '))
+
+        resultados = {}
+
+        # Extracción determinística por subcadenas para eludir fallos del autómata regex
+        if "constar que:" in texto_limpio and "estudiante" in texto_limpio:
+            bloque_posterior = texto_limpio.split("constar que:")[1]
+            nombre_crudo = bloque_posterior.split("estudiante")[0]
+            resultados["estudiante"] = nombre_crudo.strip(" :,-_")
+        else:
+            resultados["estudiante"] = "N/A"
 
         patrones = {
-            "estudiante": r"(?i)constar que:\s*(.*?)\s*estudiante",
             "curso": r"(?i)Mooc:\s*(.*?)\s*con una nota",
             "nota": r"(?i)nota final de[:\s]+(\d+(?:[.,]\d{1,2})?)",
             "fecha": r"(\d{1,2}\s+días\s+del\s+mes\s+de\s+\w+\s+del\s+\d{4})"
         }
 
-        resultados = {}
         for llave, regex in patrones.items():
             match = re.search(regex, texto_limpio)
             if match:
@@ -50,23 +57,21 @@ def extraer_info_opened(archivo_stream):
                 resultados[llave] = candidatos[0] if candidatos else "N/A"
             else:
                 resultados[llave] = "N/A"
+                
             if llave == "nota" and resultados[llave] != "N/A":
-                    try:
-                        # Remplazo preventivo de coma por punto para el cast a float
-                        valor = float(resultados[llave].replace(',', '.'))
-                        # Formateo de string (f-string rounding)
-                        resultados[llave] = f"{valor:.2f}"
-                    except ValueError:
-                        continue
+                try:
+                    valor = float(resultados[llave].replace(',', '.'))
+                    resultados[llave] = f"{valor:.2f}"
+                except ValueError:
+                    continue
+
         if resultados.get("fecha") != "N/A":
             resultados["fecha"] = normalizar_fecha(resultados["fecha"], "opened")
+            
         return resultados
 
     except Exception as e:
         return {"error": str(e)}
-
-import fitz
-import re
 
 def extraer_info_esri(archivo_stream):
     try:

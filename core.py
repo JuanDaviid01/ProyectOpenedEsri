@@ -32,7 +32,9 @@ def obtener_siguiente_resolucion(base_inicial=1048):
 @app.route("/")
 def index():
     return render_template("index.html")
+
 @app.route("/api/extraer", methods=["POST"])
+
 def procesar_certificado():
     try:
         if "archivos" not in request.files:
@@ -84,8 +86,9 @@ def generar_resolucion_final():
         codigo_estudiante = request.form.get("codigo_estudiante", "").strip()
         tipo_certificado = request.form.get("tipo_certificado", "").strip().lower()
         resultados_json = request.form.get("resultados", "")
+        programa_destino = request.form.get("programa_destino", "").strip()
 
-        if not all([codigo_estudiante, tipo_certificado, resultados_json]):
+        if not all([codigo_estudiante, tipo_certificado, resultados_json, programa_destino]):
             return jsonify({"error": "Faltan parámetros obligatorios en el form-data."}), 400
 
         resultados = json.loads(resultados_json)
@@ -110,14 +113,24 @@ def generar_resolucion_final():
 
         numero_resolucion = obtener_siguiente_resolucion()
 
-        # Payload de negocio
+        mapa_creditos = {
+            "Ingeniería de Sistemas y Telecomunicaciones": "3",
+            "Ingeniería Industrial": "4",
+            "Ingeniería de Software": "3",
+            "Ingeniería en Analítica de Datos": "3",
+            "Ingeniería en Seguridad de la Información": "3"
+        }
+        creditos_asignados = mapa_creditos.get(programa_destino, "3")
+
+        print(f"DEBUG: Contenido de primer_resultado: {primer_resultado}")
+
         datos = {
             "numero_resolucion": numero_resolucion,
             "fecha_resolucion": fecha_actual,
             "nombre_estudiante": primer_resultado.get("estudiante", "N/A"),
             "codigo_estudiante": codigo_estudiante,
             "documento_estudiante": codigo_estudiante,
-            "programa": "Ingeniería de Sistemas y Telecomunicaciones",
+            "programa": programa_destino,
             "numero_resolucion_derogada": "1090",
             "fecha_resolucion_derogada": fecha_actual,
             "nombre_curso": primer_resultado.get("curso", "N/A"),
@@ -134,7 +147,7 @@ def generar_resolucion_final():
             "nota_definitiva": item.get("nota", "N/A"),
             "asignatura_homologada": "ELECTIVA II",
             "codigo_asignatura": "C5909002",
-            "creditos": "3"
+            "creditos": creditos_asignados
         } for item in resultados]
 
         # Context Manager para I/O
