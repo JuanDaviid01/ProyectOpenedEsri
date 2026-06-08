@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Acceso – Homologar Electiva</title>
+  <link rel="stylesheet" href="../static/estilos.css">
+</head>
+
+<body>
+
+  <header class="barra-opened">
+    <div class="logo-capsula">
+      <a href="https://opened.com.co/" target="_blank">
+        <img src="../static/opened.png" alt="Opened" class="logo-opened">
+      </a>
+    </div>
+  </header>
+
+  <main class="contenedor-principal" style="margin-top: 40px;">
+    <section class="card-formulario" style="max-width: 460px;">
+
+      <!-- Pestañas -->
+      <div class="login-tabs">
+        <button class="login-tab activo" id="tab-login" onclick="mostrarTab('login')">Iniciar Sesión</button>
+        <button class="login-tab" id="tab-registro" onclick="mostrarTab('registro')">Registrarse</button>
+      </div>
+
+      <!-- Error / mensaje -->
+      <div id="mensaje-login" class="mensaje-login" style="display:none;"></div>
+
+      <!-- FORMULARIO LOGIN -->
+      <form id="form-login" class="formulario-radicado" onsubmit="submitLogin(event)">
+        <div class="grupo-campo">
+          <label for="login-usuario">Usuario</label>
+          <input type="text" id="login-usuario" placeholder="Ingrese su usuario" autocomplete="username">
+        </div>
+        <div class="grupo-campo">
+          <label for="login-password">Contraseña</label>
+          <input type="password" id="login-password" placeholder="Ingrese su contraseña" autocomplete="current-password">
+        </div>
+        <div class="acciones-formulario">
+          <button type="submit" class="btn-principal" style="flex:1;">Ingresar</button>
+        </div>
+      </form>
+
+      <!-- FORMULARIO REGISTRO -->
+      <form id="form-registro" class="formulario-radicado" style="display:none;" onsubmit="submitRegistro(event)">
+        <div class="grupo-campo">
+          <label for="reg-nombre">Nombre completo</label>
+          <input type="text" id="reg-nombre" placeholder="Ej: Paola Ramírez">
+        </div>
+        <div class="grupo-campo">
+          <label for="reg-usuario">Usuario</label>
+          <input type="text" id="reg-usuario" placeholder="Ej: paramírez" autocomplete="username">
+        </div>
+        <div class="grupo-campo">
+          <label for="reg-password">Contraseña</label>
+          <input type="password" id="reg-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+        </div>
+        <div class="grupo-campo">
+          <label for="reg-confirmar">Confirmar contraseña</label>
+          <input type="password" id="reg-confirmar" placeholder="Repita la contraseña" autocomplete="new-password">
+        </div>
+        <div class="acciones-formulario">
+          <button type="submit" class="btn-principal" style="flex:1;">Crear cuenta</button>
+        </div>
+      </form>
+
+    </section>
+  </main>
+
+  <script>
+    function mostrarTab(tab) {
+      const esLogin = tab === 'login';
+      document.getElementById('form-login').style.display = esLogin ? 'flex' : 'none';
+      document.getElementById('form-registro').style.display = esLogin ? 'none' : 'flex';
+      document.getElementById('tab-login').classList.toggle('activo', esLogin);
+      document.getElementById('tab-registro').classList.toggle('activo', !esLogin);
+      ocultarMensaje();
+    }
+
+    function mostrarMensaje(texto, esError) {
+      const el = document.getElementById('mensaje-login');
+      el.textContent = texto;
+      el.className = 'mensaje-login ' + (esError ? 'error' : 'exito');
+      el.style.display = 'block';
+    }
+
+    function ocultarMensaje() {
+      document.getElementById('mensaje-login').style.display = 'none';
+    }
+
+    async function submitLogin(e) {
+      e.preventDefault();
+      const username = document.getElementById('login-usuario').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      if (!username || !password) {
+        mostrarMensaje('Complete todos los campos.', true);
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (!res.ok) { mostrarMensaje(data.error, true); return; }
+        window.location.href = '/app';
+      } catch {
+        mostrarMensaje('Error de conexión con el servidor.', true);
+      }
+    }
+
+    async function submitRegistro(e) {
+      e.preventDefault();
+      const nombre = document.getElementById('reg-nombre').value.trim();
+      const username = document.getElementById('reg-usuario').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const confirmar = document.getElementById('reg-confirmar').value;
+
+      if (!nombre || !username || !password || !confirmar) {
+        mostrarMensaje('Complete todos los campos.', true);
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/registro', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, username, password, confirmar })
+        });
+        const data = await res.json();
+        if (!res.ok) { mostrarMensaje(data.error, true); return; }
+
+        // Registro exitoso: limpiar form y pedir que inicie sesión
+        document.getElementById('reg-nombre').value = '';
+        document.getElementById('reg-usuario').value = '';
+        document.getElementById('reg-password').value = '';
+        document.getElementById('reg-confirmar').value = '';
+        mostrarTab('login');
+        mostrarMensaje('Cuenta creada correctamente. Ahora inicia sesión.', false);
+      } catch {
+        mostrarMensaje('Error de conexión con el servidor.', true);
+      }
+    }
+  </script>
+</body>
+
+</html>

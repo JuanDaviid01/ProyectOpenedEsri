@@ -13,6 +13,8 @@ body {
   align-items: center;
   padding-left: 0;
   box-sizing: border-box;
+  position: relative;
+  z-index: 10;
 }
 
 .logo-capsula {
@@ -104,6 +106,7 @@ body {
 
 /* INPUTS, TEXTAREA Y SELECT */
 .grupo-campo input[type="text"],
+.grupo-campo input[type="password"],
 .grupo-campo textarea,
 .grupo-campo select {
   width: 100%;
@@ -132,6 +135,7 @@ body {
 }
 
 .grupo-campo input[type="text"]:focus,
+.grupo-campo input[type="password"]:focus,
 .grupo-campo textarea:focus,
 .grupo-campo select:focus {
   border-color: #a51c7d;
@@ -229,6 +233,128 @@ body {
 
 .btn-secundario:hover {
   background: #dddddd;
+}
+
+/* SEGMENTADOR TIPO NOTA */
+.segmentador {
+  display: flex;
+  border: 1px solid #d3d3d3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f5f0f4;
+}
+
+.seg-opcion {
+  flex: 1;
+  padding: 14px 0;
+  font-size: 15px;
+  font-weight: bold;
+  border: none;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.seg-opcion.activo {
+  background: linear-gradient(180deg, #a51c7d 0%, #8e1f73 100%);
+  color: white;
+  border-radius: 11px;
+}
+
+.seg-opcion:not(.activo):hover {
+  background: #ecdee9;
+  color: #8e1f73;
+}
+
+/* BARRA USUARIO (header derecho) */
+.barra-usuario {
+  margin-left: auto;
+  margin-right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.nombre-sesion {
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.btn-logout {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: bold;
+  text-decoration: none;
+  transition: 0.2s;
+}
+
+.btn-logout:hover {
+  background: rgba(255,255,255,0.28);
+}
+
+/* RESPONSABLE DISPLAY (solo lectura) */
+.responsable-display {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #d3d3d3;
+  border-radius: 12px;
+  font-size: 15px;
+  box-sizing: border-box;
+  background: #f5f0f4;
+  color: #8e1f73;
+  font-weight: bold;
+}
+
+/* PESTAÑAS LOGIN */
+.login-tabs {
+  display: flex;
+  border-bottom: 2px solid #e8d5e4;
+  margin-bottom: 28px;
+}
+
+.login-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 12px 0;
+  font-size: 15px;
+  font-weight: bold;
+  color: #999;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: 0.2s;
+}
+
+.login-tab.activo {
+  color: #8e1f73;
+  border-bottom-color: #8e1f73;
+}
+
+/* MENSAJE LOGIN */
+.mensaje-login {
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.mensaje-login.error {
+  background: #fde8f0;
+  color: #c0144d;
+  border: 1px solid #f5a8c5;
+}
+
+.mensaje-login.exito {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
 }
 
 /* RESPONSIVE */

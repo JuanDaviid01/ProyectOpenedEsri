@@ -1,3 +1,12 @@
+// Segmentador tipo de nota
+document.querySelectorAll('#tipo_nota .seg-opcion').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('#tipo_nota .seg-opcion').forEach(b => b.classList.remove('activo'));
+        btn.classList.add('activo');
+        document.getElementById('tipo_nota_valor').value = btn.dataset.valor;
+    });
+});
+
 let estudianteValidado = null;
 let archivosEnMemoria = [];
 const inputArchivos = document.getElementById('archivos');
@@ -6,8 +15,8 @@ const btnValidar = document.getElementById('btn-validar');
 const btnGenerar = document.getElementById('btn-generar');
 const inputCodigo = document.getElementById('codigo_estudiante');
 const selectTipo = document.getElementById('tipo_certificado');
-const inputResponsable = document.getElementById('responsable_resolucion');
 const selectPrograma = document.getElementById('programa_destino');
+
 // Cargar archivos en memoria
 inputArchivos.addEventListener('change', () => {
     Array.from(inputArchivos.files).forEach(archivo => {
@@ -29,7 +38,6 @@ function renderizarLista() {
     archivosEnMemoria.forEach((archivo, index) => {
         const nodoArchivo = document.createElement('div');
         nodoArchivo.className = 'archivo-item';
-        // Flexbox inline para separar nombre y botón
         nodoArchivo.style.display = 'flex';
         nodoArchivo.style.justifyContent = 'space-between';
         nodoArchivo.style.alignItems = 'center';
@@ -38,7 +46,6 @@ function renderizarLista() {
         const textoArchivo = document.createElement('span');
         textoArchivo.textContent = `${archivo.name} (${(archivo.size / 1024).toFixed(2)} KB)`;
 
-        // Botón de eliminación con inyección de evento en el callback
         const btnEliminar = document.createElement('button');
         btnEliminar.type = 'button';
         btnEliminar.innerHTML = '✕';
@@ -57,16 +64,13 @@ function renderizarLista() {
 }
 
 function eliminarArchivo(index) {
-    // Mutación del array de estado
     archivosEnMemoria.splice(index, 1);
 
-    // Invalida el estado de la validación anterior por seguridad transaccional
     if (estudianteValidado) {
         estudianteValidado = null;
         alert("Atención: Al modificar los archivos, debe volver a Validar los Documentos.");
     }
 
-    // Renderizado reactivo
     renderizarLista();
 }
 
@@ -75,12 +79,6 @@ btnValidar.addEventListener('click', async () => {
     const codigoEstudiante = inputCodigo.value.trim();
     if (archivosEnMemoria.length < 3) {
         alert("Error: La normativa exige un mínimo de 3 certificados para este proceso.");
-        return;
-    }
-    const responsableResolucion = inputResponsable.value.trim();
-
-    if (!responsableResolucion) {
-        alert("Error: Ingrese el responsable de la resolución.");
         return;
     }
     if (!codigoEstudiante) {
@@ -107,7 +105,7 @@ btnValidar.addEventListener('click', async () => {
     formData.append('tipo_certificado', selectTipo.value);
 
     try {
-        const response = await fetch('http://localhost:5000/api/extraer', {
+        const response = await fetch('/api/extraer', {
             method: 'POST',
             body: formData
         });
@@ -138,6 +136,7 @@ btnValidar.addEventListener('click', async () => {
             codigo: codigoEstudiante,
             nombre: (datosCrudos[0].estudiante || '').trim(),
             certificados: datosCrudos.map(cert => ({
+                estudiante: cert.estudiante || "N/A",
                 curso: cert.curso || "N/A",
                 nota: cert.nota || "N/A",
                 fecha: cert.fecha || "N/A",
@@ -157,7 +156,6 @@ btnValidar.addEventListener('click', async () => {
 
 // Generar resolución final + anexos
 btnGenerar.addEventListener('click', async () => {
-    // 1. Validaciones de estado
     if (!estudianteValidado) {
         alert("Primero debe validar los documentos antes de generar la resolución.");
         return;
@@ -171,51 +169,53 @@ btnGenerar.addEventListener('click', async () => {
         return;
     }
 
-    if (archivosEnMemoria.length === 0) {
-        alert("No hay archivos cargados para anexar.");
-        return;
-    }
     if (!selectPrograma.value) {
         alert("Error: Seleccione el programa de destino.");
         return;
     }
 
+    if (archivosEnMemoria.length === 0) {
+        alert("No hay archivos cargados para anexar.");
+        return;
+    }
+
     try {
-        // 2. Instanciación e hidratación del payload multipart
         const formData = new FormData();
         formData.append("codigo_estudiante", estudianteValidado.codigo);
         formData.append("tipo_certificado", selectTipo.value);
         formData.append("programa_destino", selectPrograma.value);
-        formData.append("resultados", JSON.stringify(estudianteValidado.certificados));
+        formData.append("tipo_nota", document.getElementById('tipo_nota_valor').value);
+        formData.append(
+            "resultados",
+            JSON.stringify(estudianteValidado.certificados)
+        );
 
         archivosEnMemoria.forEach(archivo => {
             formData.append("archivos", archivo);
         });
 
-        // 3. Petición POST al backend
-        const response = await fetch('http://localhost:5000/api/generar-resolucion-final', {
+        const response = await fetch('/api/generar-resolucion-final', {
             method: 'POST',
             body: formData
         });
 
         if (!response.ok) {
-            // Manejo de errores controlados por la API
             const errorData = await response.json();
             throw new Error(errorData.error || `HTTP Status: ${response.status}`);
         }
 
-        // 4. Manejo del I/O binario y descarga
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
 
         link.href = url;
+        // Obtenemos el consecutivo de la cabecera Content-Disposition si la hay,
+        // o dejamos que el navegador maneje la descarga
         link.download = `Resolucion_${estudianteValidado.codigo}_FINAL.docx`;
 
         document.body.appendChild(link);
         link.click();
 
-        // Garbage collection
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
 
