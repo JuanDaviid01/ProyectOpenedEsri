@@ -1,4 +1,5 @@
 # En services/extractor_pdf.py
+# pyrefly: ignore [missing-import]
 import fitz
 import re
 from datetime import datetime

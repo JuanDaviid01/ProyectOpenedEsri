@@ -1,8 +1,12 @@
 import re
-import fitz  # PyMuPDF para rasterización
+# pyrefly: ignore [missing-import]
+import fitz
 from pathlib import Path
+# pyrefly: ignore [missing-import]
 from docx import Document
+# pyrefly: ignore [missing-import]
 from docx.shared import Inches
+# pyrefly: ignore [missing-import]
 from docx.enum.table import WD_ALIGN_VERTICAL
 
 def obtener_ruta_base():

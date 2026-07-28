@@ -226,9 +226,9 @@ def generar_resolucion_final():
         else:
             # Nota cualitativa
             if promedio >= 3.0:
-                nota_definitiva = "APROBADA"
+                nota_definitiva = "9.5"
             else:
-                nota_definitiva = "REPROBADA"
+                nota_definitiva = "0.0"
 
         # =============================
         # NORMALIZACIÓN DEL NOMBRE DEL ESTUDIANTE
@@ -238,13 +238,27 @@ def generar_resolucion_final():
             nombre_estudiante = "SIN NOMBRE"
 
         mapa_creditos = {
-            "Ingeniería de Sistemas y Telecomunicaciones": "3",
-            "Ingeniería Industrial": "4",
-            "Ingeniería de Software": "3",
-            "Ingeniería en Analítica de Datos": "3",
-            "Ingeniería en Seguridad de la Información": "3"
+            # Sistemas y Telecomunicaciones
+            "ingeniería en sistemas y telecomunicaciones presencial": "3",
+            "ingenieria en sistemas y telecomunicaciones virtual": "3",
+            # Analítica de Datos
+            "ingeniería en analítica de datos presencial": "2",
+            "ingenieria en analitica de datos virtual": "2",
+            # Logística
+            "ingeniería logística presencial": "3",
+            "ingenieria logistica virtual": "3",
+            # Seguridad de la Información
+            "ingeniería en seguridad de la información presencial": "3",
+            "ingenieria en seguridad de la informacion virtual": "3",
+            # Industrial
+            "ingeniería industrial": "2",
+            # Postgrados SIG (por defecto 3 créditos, editable)
+            "especialización en sistemas de información geográfica": "3",
+            "maestría en tecnologías de la información geográfica": "3",
+            # Maestría Educación
+            "maestría en educación y transformación digital": "2"
         }
-        creditos_asignados = mapa_creditos.get(programa_destino, "3")
+        creditos_asignados = mapa_creditos.get(programa_destino.lower().strip(), "3")
 
         datos = {
             "fecha_resolucion": fecha_actual,

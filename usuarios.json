@@ -3,16 +3,8 @@
     "nombre": "diana milena giraldo",
     "password_hash": "scrypt:32768:8:1$zPHp2UCWfXQnMqYB$c4402adf454e2f6d3d132eaadd5a4f33a7dca9ce445712d83534180950069121b4e9e12b1d77d471cb9cfbae004914dc9686c5e78f6fb3be5284de9a498ec3d0"
   },
-  "juandaviid": {
+  "juandaviiid": {
     "nombre": "Juan David Gomez",
-    "password_hash": "scrypt:32768:8:1$Ox1GEQodvJGH4QYp$d4cade42ebb5f4f7c8d6e833dfc0b51d4bb3d53112057f2f73c63ae6d4f4bd7b717e3ee000c632a1a8518eb136b7fdfe1686457aab8a1b31262d8a40df5d7af0"
-  },
-  "juandaviid26": {
-    "nombre": "Juan David Gomez",
-    "password_hash": "scrypt:32768:8:1$S6Aj1zhfABHq6AVn$935a3c661713bd04fe6b89600695a64b169ee80d8153e24876040042293be36237fc98f2b658a60e4f400e5c757143c448d7f661fae19028eba0eb253f644f9a"
-  },
-  "juandaviid22": {
-    "nombre": "Juan David Gomez",
-    "password_hash": "scrypt:32768:8:1$rsf5Nh9ckzPPjFNa$e0ddf69750a2ba94c10e9810671bd9e525565a93b17ee6201c1c45d9343195d224ca524a4761dfe435e5d5b02b4f7a46403ca0f02078c5b6e344cce002f1c462"
+    "password_hash": "scrypt:32768:8:1$AAbO776liESyGqYM$97a0a2953ac8fb4f20a985b81c468076bfcdbfb84cdb9767f95a2181d63ad1df19adb74e97c2cd2cd4a3d83fcb56e0fd0cea96cb3508af78e14f05013549d93e"
   }
 }

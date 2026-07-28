@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+# pyrefly: ignore [missing-import]
 from openpyxl import load_workbook
 from datetime import datetime
 
