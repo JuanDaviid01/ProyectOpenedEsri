@@ -1,3 +1,62 @@
+// SISTEMA DE NOTIFICACIONES TOAST
+function mostrarToast(mensaje, titulo = '', tipo = 'info', duracion = 4000) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${tipo}`;
+
+    const iconos = {
+        exito: '✓',
+        error: '✕',
+        info: 'ℹ',
+        advertencia: '⚠'
+    };
+    const icono = iconos[tipo] || 'ℹ';
+
+    toast.innerHTML = `
+        <span class="toast-icono">${icono}</span>
+        <div class="toast-contenido">
+            ${titulo ? `<div class="toast-titulo">${titulo}</div>` : ''}
+            <div>${mensaje}</div>
+        </div>
+        <button class="toast-cerrar" type="button">✕</button>
+    `;
+
+    container.appendChild(toast);
+
+    const btnCerrar = toast.querySelector('.toast-cerrar');
+    btnCerrar.onclick = () => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 300);
+    };
+
+    if (duracion > 0) {
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.classList.add('fade-out');
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, duracion);
+    }
+}
+
+// MAPEO DE ELECTIVAS DISPONIBLES POR PROGRAMA
+const ELECTIVAS_POR_PROGRAMA = {
+    "Ingeniería en Sistemas y Telecomunicaciones Presencial": ["Electiva I", "Electiva II"],
+    "Ingeniería en Sistemas y Telecomunicaciones Virtual": ["Electiva I", "Electiva II"],
+    "Ingeniería en analítica de datos presencial": ["Electiva I", "Electiva II", "Electiva III"],
+    "Ingeniería en analítica de datos virtual": ["Electiva I", "Electiva II", "Electiva III"],
+    "Ingeniería Logística Presencial": ["Electiva I", "Electiva II", "Electiva III", "Electiva IV"],
+    "Ingeniería Logística Virtual": ["Electiva I", "Electiva II", "Electiva III", "Electiva IV"],
+    "Ingeniería en Seguridad de la Información Presencial": ["Electiva I", "Electiva II"],
+    "Ingeniería en Seguridad de la Información Virtual": ["Electiva I", "Electiva II"],
+    "Ingeniería Industrial": ["Electiva I", "Electiva II"],
+    "Especialización en Sistemas de información geográfica": ["Electiva I", "Electiva II"],
+    "Maestría en Tecnologías de la información geográfica": ["Electiva I", "Electiva II"],
+    "Maestría en Educación y transformación digital": ["Electiva I", "Electiva II", "Electiva III", "Electiva IV"]
+};
+
 // Segmentador tipo de nota
 document.querySelectorAll('#tipo_nota .seg-opcion').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -18,6 +77,87 @@ const selectTipo = document.getElementById('tipo_certificado');
 const selectPrograma = document.getElementById('programa_destino');
 const selectMateria = document.getElementById('materia_homologar');
 
+// Función para actualizar dinámicamente las materias a homologar según el programa
+function actualizarOpcionesElectivas() {
+    const programaSeleccionado = selectPrograma.value;
+    selectMateria.innerHTML = '';
+
+    if (!programaSeleccionado || !ELECTIVAS_POR_PROGRAMA[programaSeleccionado]) {
+        selectMateria.disabled = true;
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'Seleccione primero un programa';
+        opt.disabled = true;
+        opt.selected = true;
+        selectMateria.appendChild(opt);
+        return;
+    }
+
+    selectMateria.disabled = false;
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.textContent = 'Seleccionar materia';
+    defaultOpt.disabled = true;
+    defaultOpt.selected = true;
+    selectMateria.appendChild(defaultOpt);
+
+    const electivasDisponibles = ELECTIVAS_POR_PROGRAMA[programaSeleccionado];
+    electivasDisponibles.forEach(electiva => {
+        const opt = document.createElement('option');
+        opt.value = electiva;
+        opt.textContent = electiva;
+        selectMateria.appendChild(opt);
+    });
+}
+
+// Resetear estado de validación y deshabilitar botón de generar
+function invalidarValidacion(notificar = true) {
+    if (estudianteValidado) {
+        estudianteValidado = null;
+        if (notificar) {
+            mostrarToast("Al realizar cambios en el formulario, debe volver a validar los documentos.", "Atención", "advertencia");
+        }
+    }
+    btnGenerar.disabled = true;
+}
+
+// Resetear formulario completo (al cambiar código de estudiante)
+let codigoPrevio = (inputCodigo.value || '').trim();
+
+inputCodigo.addEventListener('input', () => {
+    const codigoActual = inputCodigo.value.trim();
+    if (codigoActual !== codigoPrevio) {
+        codigoPrevio = codigoActual;
+        
+        // Resetear archivos
+        archivosEnMemoria = [];
+        inputArchivos.value = '';
+        renderizarLista();
+        
+        // Resetear selects
+        selectPrograma.value = '';
+        actualizarOpcionesElectivas();
+        selectTipo.value = '';
+        
+        // Resetear validación
+        invalidarValidacion(false);
+    }
+});
+
+// Eventos de cambios en campos del formulario
+selectPrograma.addEventListener('change', () => {
+    actualizarOpcionesElectivas();
+    invalidarValidacion(false);
+});
+
+selectMateria.addEventListener('change', () => {
+    invalidarValidacion(false);
+});
+
+selectTipo.addEventListener('change', () => {
+    invalidarValidacion(false);
+});
+
 // Cargar archivos en memoria
 inputArchivos.addEventListener('change', () => {
     Array.from(inputArchivos.files).forEach(archivo => {
@@ -26,6 +166,7 @@ inputArchivos.addEventListener('change', () => {
 
     inputArchivos.value = '';
     renderizarLista();
+    invalidarValidacion(true);
 });
 
 function renderizarLista() {
@@ -66,34 +207,25 @@ function renderizarLista() {
 
 function eliminarArchivo(index) {
     archivosEnMemoria.splice(index, 1);
-
-    if (estudianteValidado) {
-        estudianteValidado = null;
-        alert("Atención: Al modificar los archivos, debe volver a Validar los Documentos.");
-    }
-
+    invalidarValidacion(true);
     renderizarLista();
 }
 
 // Validar documentos
 btnValidar.addEventListener('click', async () => {
     const codigoEstudiante = inputCodigo.value.trim();
-    if (archivosEnMemoria.length < 1) {
-        alert("Error: Cargue al menos 1 certificado para realizar la validación.");
+    if (!codigoEstudiante) {
+        mostrarToast("Ingrese el código del estudiante.", "Código Requerido", "error");
         return;
     }
-    if (!codigoEstudiante) {
-        alert("Error: Ingrese el código del estudiante.");
+
+    if (archivosEnMemoria.length < 1) {
+        mostrarToast("Cargue al menos 1 certificado para realizar la validación.", "Archivos Requeridos", "error");
         return;
     }
 
     if (!selectTipo.value) {
-        alert("Error: Seleccione el proveedor del certificado.");
-        return;
-    }
-
-    if (archivosEnMemoria.length === 0) {
-        alert("Error: Cargue al menos un documento.");
+        mostrarToast("Seleccione el proveedor del certificado.", "Proveedor Requerido", "error");
         return;
     }
 
@@ -106,6 +238,8 @@ btnValidar.addEventListener('click', async () => {
     formData.append('tipo_certificado', selectTipo.value);
 
     try {
+        mostrarToast("Analizando y validando certificados cargados...", "Validando", "info", 2000);
+
         const response = await fetch('/api/extraer', {
             method: 'POST',
             body: formData
@@ -129,7 +263,8 @@ btnValidar.addEventListener('click', async () => {
 
         if (nombresInconsistentes) {
             estudianteValidado = null;
-            alert("Error crítico: Se detectaron certificados pertenecientes a diferentes estudiantes en el mismo lote.");
+            btnGenerar.disabled = true;
+            mostrarToast("Se detectaron certificados pertenecientes a diferentes estudiantes en el mismo lote.", "Error de Validación", "error");
             return;
         }
 
@@ -145,47 +280,45 @@ btnValidar.addEventListener('click', async () => {
             }))
         };
 
-        console.log("Validación superada:", estudianteValidado);
-        alert("Documentos validados correctamente. Listo para generar resolución.");
+        btnGenerar.disabled = false;
+        mostrarToast(`Documentos de <strong>${estudianteValidado.nombre}</strong> validados correctamente. Ya puede generar la resolución.`, "Validación Exitosa", "exito", 5000);
 
     } catch (error) {
         console.error("Error en validación:", error);
         estudianteValidado = null;
-        alert(`Error procesando la petición: ${error.message}`);
+        btnGenerar.disabled = true;
+        mostrarToast(error.message, "Error al Validar", "error", 5000);
     }
 });
 
 // Generar resolución final + anexos
 btnGenerar.addEventListener('click', async () => {
     if (!estudianteValidado) {
-        alert("Primero debe validar los documentos antes de generar la resolución.");
+        mostrarToast("Primero debe validar los documentos antes de generar la resolución.", "Validación Requerida", "advertencia");
         return;
     }
     if (archivosEnMemoria.length < 1) {
-        alert("Error: Cargue al menos 1 certificado para este proceso.");
+        mostrarToast("Cargue al menos 1 certificado para este proceso.", "Archivos Requeridos", "error");
         return;
     }
     if (!selectTipo.value) {
-        alert("Seleccione el proveedor del certificado.");
+        mostrarToast("Seleccione el proveedor del certificado.", "Proveedor Requerido", "error");
         return;
     }
 
     if (!selectPrograma.value) {
-        alert("Error: Seleccione el programa de destino.");
+        mostrarToast("Seleccione el programa de destino.", "Programa Requerido", "error");
         return;
     }
 
     if (!selectMateria.value) {
-        alert("Error: Seleccione la materia a homologar.");
-        return;
-    }
-
-    if (archivosEnMemoria.length === 0) {
-        alert("No hay archivos cargados para anexar.");
+        mostrarToast("Seleccione la materia a homologar.", "Materia Requerida", "error");
         return;
     }
 
     try {
+        mostrarToast("Generando documento de resolución final con anexos...", "Procesando", "info", 3000);
+
         const formData = new FormData();
         formData.append("codigo_estudiante", estudianteValidado.codigo);
         formData.append("tipo_certificado", selectTipo.value);
@@ -216,8 +349,6 @@ btnGenerar.addEventListener('click', async () => {
         const link = document.createElement('a');
 
         link.href = url;
-        // Obtenemos el consecutivo de la cabecera Content-Disposition si la hay,
-        // o dejamos que el navegador maneje la descarga
         link.download = `Resolucion_${estudianteValidado.codigo}_FINAL.docx`;
 
         document.body.appendChild(link);
@@ -226,10 +357,10 @@ btnGenerar.addEventListener('click', async () => {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
 
-        alert("Resolución final generada y descargada correctamente.");
+        mostrarToast("Resolución final generada y descargada correctamente.", "Descarga Completada", "exito", 5000);
 
     } catch (error) {
         console.error("Error generando resolución final:", error);
-        alert(`Ocurrió un error al generar la resolución final: ${error.message}`);
+        mostrarToast(error.message, "Error al Generar", "error", 6000);
     }
 });

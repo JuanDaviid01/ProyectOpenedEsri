@@ -9,6 +9,7 @@
 </head>
 
 <body>
+  <div id="toast-container" class="toast-container"></div>
 
   <header class="barra-opened">
     <div class="logo-capsula">
@@ -64,12 +65,8 @@
 
         <div class="grupo-campo">
           <label for="materia_homologar">Materia a homologar</label>
-          <select id="materia_homologar" name="materia_homologar">
-            <option value="" selected disabled>Seleccionar materia</option>
-            <option value="Electiva I">Electiva I</option>
-            <option value="Electiva II">Electiva II</option>
-            <option value="Electiva III">Electiva III</option>
-            <option value="Electiva IV">Electiva IV</option>
+          <select id="materia_homologar" name="materia_homologar" disabled>
+            <option value="" selected disabled>Seleccione primero un programa</option>
           </select>
         </div>
 
@@ -117,7 +114,7 @@
             Validar Documentos
           </button>
 
-          <button type="button" id="btn-generar" class="btn-secundario">
+          <button type="button" id="btn-generar" class="btn-secundario" disabled>
             Generar Resolucion
           </button>
         </div>
