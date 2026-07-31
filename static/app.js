@@ -16,6 +16,7 @@ const btnGenerar = document.getElementById('btn-generar');
 const inputCodigo = document.getElementById('codigo_estudiante');
 const selectTipo = document.getElementById('tipo_certificado');
 const selectPrograma = document.getElementById('programa_destino');
+const selectMateria = document.getElementById('materia_homologar');
 
 // Cargar archivos en memoria
 inputArchivos.addEventListener('change', () => {
@@ -174,6 +175,11 @@ btnGenerar.addEventListener('click', async () => {
         return;
     }
 
+    if (!selectMateria.value) {
+        alert("Error: Seleccione la materia a homologar.");
+        return;
+    }
+
     if (archivosEnMemoria.length === 0) {
         alert("No hay archivos cargados para anexar.");
         return;
@@ -184,6 +190,7 @@ btnGenerar.addEventListener('click', async () => {
         formData.append("codigo_estudiante", estudianteValidado.codigo);
         formData.append("tipo_certificado", selectTipo.value);
         formData.append("programa_destino", selectPrograma.value);
+        formData.append("materia_homologar", selectMateria.value);
         formData.append("tipo_nota", document.getElementById('tipo_nota_valor').value);
         formData.append(
             "resultados",

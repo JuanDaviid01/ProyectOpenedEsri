@@ -4,6 +4,7 @@ import re
 import json
 import tempfile
 import locale
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 from werkzeug.utils import secure_filename
@@ -13,6 +14,83 @@ from flask import Flask, request, jsonify, render_template, send_file, session, 
 from flask_cors import CORS
 from services import extractor_pdf, generador_doc
 from services.resolucion_excel import obtener_y_registrar_resolucion
+
+def normalizar_texto(texto):
+    if not texto:
+        return ""
+    texto_nfkd = unicodedata.normalize('NFKD', texto)
+    return "".join([c for c in texto_nfkd if not unicodedata.combining(c)]).lower().strip()
+
+CODIGOS_ASIGNATURAS = {
+    # 1. Sistemas y Telecomunicaciones Presencial
+    "ingenieria en sistemas y telecomunicaciones presencial": {
+        "electiva i": "C5808002",
+        "electiva ii": "C5909002",
+    },
+    # 2. Sistemas y Telecomunicaciones Virtual
+    "ingenieria en sistemas y telecomunicaciones virtual": {
+        "electiva i": "CV050036",
+        "electiva ii": "CV050039",
+    },
+    # 3. Analítica de datos presencial
+    "ingenieria en analitica de datos presencial": {
+        "electiva i": "IA030606",
+        "electiva ii": "IA030707",
+        "electiva iii": "IA030807",
+    },
+    # 4. Analítica de datos virtual
+    "ingenieria en analitica de datos virtual": {
+        "electiva i": "10410606",
+        "electiva ii": "10410706",
+        "electiva iii": "10410805",
+    },
+    # 5. Logística presencial
+    "ingenieria logistica presencial": {
+        "electiva i": "IL020403",
+        "electiva ii": "IL020603",
+        "electiva iii": "IL020703",
+        "electiva iv": "IL020803",
+    },
+    # 6. Logística virtual
+    "ingenieria logistica virtual": {
+        "electiva i": "10310403",
+        "electiva ii": "10310603",
+        "electiva iii": "10310704",
+        "electiva iv": "10310803",
+    },
+    # 7. Seguridad de la información presencial
+    "ingenieria en seguridad de la informacion presencial": {
+        "electiva i": "IS040606",
+        "electiva ii": "IS040804",
+    },
+    # 8. Seguridad de la información virtual
+    "ingenieria en seguridad de la informacion virtual": {
+        "electiva i": "10510606",
+        "electiva ii": "10510804",
+    },
+    # 9. Industrial
+    "ingenieria industrial": {
+        "electiva i": "10710405",
+        "electiva ii": "10710503",
+    },
+    # 10. Especialización en SIG
+    "especializacion en sistemas de informacion geografica": {
+        "electiva i": "83060204",
+        "electiva ii": "83060207",
+    },
+    # 11. Maestría en TIG
+    "maestria en tecnologias de la informacion geografica": {
+        "electiva i": "M8040106",
+        "electiva ii": "M8040206",
+    },
+    # 12. Maestría en Educación y transformación digital
+    "maestria en educacion y transformacion digital": {
+        "electiva i": "M1510102",
+        "electiva ii": "M1510103",
+        "electiva iii": "M1510204",
+        "electiva iv": "M1510303",
+    }
+}
 
 app = Flask(__name__)
 app.secret_key = "opened-esri-secret-2025"
@@ -177,10 +255,11 @@ def generar_resolucion_final():
         tipo_certificado = request.form.get("tipo_certificado", "").strip().lower()
         resultados_json = request.form.get("resultados", "")
         programa_destino = request.form.get("programa_destino", "").strip()
+        materia_homologar = request.form.get("materia_homologar", "Electiva I").strip()
         tipo_nota = request.form.get("tipo_nota", "cuantitativa").strip().lower()
         responsable_resolucion = session["nombre"]
 
-        if not all([codigo_estudiante, tipo_certificado, resultados_json, programa_destino, responsable_resolucion]):
+        if not all([codigo_estudiante, tipo_certificado, resultados_json, programa_destino, materia_homologar, responsable_resolucion]):
             return jsonify({"error": "Faltan parámetros obligatorios en el form-data."}), 400
 
         MESES_NOMBRE = {
@@ -281,8 +360,6 @@ def generar_resolucion_final():
             "codigo_estudiante": codigo_estudiante,
             "documento_estudiante": codigo_estudiante,
             "programa": programa_destino,
-            "numero_resolucion_derogada": "1090",
-            "fecha_resolucion_derogada": fecha_actual,
             "nombre_curso": primer_resultado.get("curso", "N/A"),
             "nota_curso": primer_resultado.get("nota", "N/A"),
             "dia_constancia": dia_constancia,
@@ -295,13 +372,20 @@ def generar_resolucion_final():
         numero_resolucion = obtener_y_registrar_resolucion(datos, usuario=responsable_resolucion)
         datos["numero_resolucion"] = numero_resolucion
 
+        # Obtener código de asignatura dinámico según el programa y la electiva seleccionada
+        prog_norm = normalizar_texto(programa_destino)
+        mat_norm = normalizar_texto(materia_homologar)
+
+        mapa_prog = CODIGOS_ASIGNATURAS.get(prog_norm, {})
+        codigo_asignatura = mapa_prog.get(mat_norm, "C5909002")
+
         cursos = [{
             "periodo": "2025-2",
             "asignatura_opened": item.get("curso", "N/A"),
             "nota": item.get("nota", "N/A"),
             "nota_definitiva": nota_definitiva,
-            "asignatura_homologada": "ELECTIVA II",
-            "codigo_asignatura": "C5909002",
+            "asignatura_homologada": materia_homologar.upper(),
+            "codigo_asignatura": codigo_asignatura,
             "creditos": creditos_asignados
         } for item in resultados]
 
