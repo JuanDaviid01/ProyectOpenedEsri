@@ -7,7 +7,7 @@
 
 ## Visión General del Proyecto
 
-**Opened ESRI** es una solución integral basada en software para la automatización del proceso de **homologación de asignaturas electivas** para los programas de pregrado y posgrado de la Universidad de Manizales.
+Es una solución integral basada en software para la automatización del proceso de **homologación de asignaturas electivas** para los programas de pregrado y posgrado de la Universidad de Manizales.
 
 El sistema procesa certificados digitales emitidos por las plataformas **Opened** y **ESRI**, extrae la información relevante de forma determinística mediante procesamiento de documentos PDF, realiza la homologación de créditos y códigos de asignaturas según el programa académico de destino, actualiza el histórico oficial en Excel y genera la resolución administrativa en formato Word (`.docx`) lista para expedición, anexando los soportes digitales rasterizados en alta resolución.
 
@@ -60,15 +60,12 @@ ProyectOpenedEsri/
 │   ├── resolucionlimpia.docx      # Plantilla Word para homologaciones Opened
 │   ├── resolucionlimpiaEsri.docx  # Plantilla Word para homologaciones ESRI
 │   ├── FCI & RESOLUCIONES 2025.xlsx # Libro Excel de control histórico
-│   ├── certificadosOpened/        # Certificados PDF de prueba (Opened)
-│   └── certificadosESRI/          # Certificados PDF de prueba (ESRI)
+│
 │
 ├── static/                        # Archivos estáticos de la interfaz web
 │   ├── app.js                     # Lógica cliente (Toast, AJAX, formulario dinámico)
 │   ├── estilos.css                # Hoja de estilos general y notificaciones
-│   ├── logoum.png                 # Logo Universidad de Manizales
-│   ├── opened.png                 # Logo Opened
-│   └── banner.png                 # Banner superior
+│
 │
 └── templates/                     # Plantillas HTML
     ├── login.html                 # Pantalla de autenticación y registro
