@@ -183,19 +183,34 @@ def generar_resolucion_final():
         if not all([codigo_estudiante, tipo_certificado, resultados_json, programa_destino, responsable_resolucion]):
             return jsonify({"error": "Faltan parámetros obligatorios en el form-data."}), 400
 
+        MESES_NOMBRE = {
+            1: "enero", 2: "febrero", 3: "marzo", 4: "abril", 5: "mayo", 6: "junio",
+            7: "julio", 8: "agosto", 9: "septiembre", 10: "octubre", 11: "noviembre", 12: "diciembre"
+        }
+
         resultados = json.loads(resultados_json)
         if not resultados:
             return jsonify({"error": "La lista de resultados está vacía."}), 400
-        if len(resultados) < 3:
+        if len(resultados) < 1:
             return jsonify({
-                "error": f"Se requieren al menos 3 certificados válidos para homologar. El sistema solo procesó {len(resultados)}."
+                "error": "Se requiere al menos 1 certificado válido para homologar."
             }), 400
 
         primer_resultado = resultados[0]
         fecha_extraida = primer_resultado.get("fecha", "")
 
-        patron_fecha = re.search(r"(\d{1,2})\s+días\s+del\s+mes\s+de\s+(\w+)\s+del\s+(\d{4})", fecha_extraida, re.IGNORECASE)
-        dia_constancia, mes_constancia, anio_constancia = patron_fecha.groups() if patron_fecha else ("", "", "")
+        dia_constancia, mes_constancia, anio_constancia = "", "", ""
+        if fecha_extraida:
+            iso_match = re.match(r"^(\d{4})-(\d{2})-(\d{2})$", fecha_extraida.strip())
+            if iso_match:
+                anio, mes_num, dia = iso_match.groups()
+                dia_constancia = str(int(dia))
+                mes_constancia = MESES_NOMBRE.get(int(mes_num), "")
+                anio_constancia = anio
+            else:
+                patron_fecha = re.search(r"(\d{1,2})\s+días\s+del\s+mes\s+de\s+(\w+)\s+del\s+(\d{4})", fecha_extraida, re.IGNORECASE)
+                if patron_fecha:
+                    dia_constancia, mes_constancia, anio_constancia = patron_fecha.groups()
 
         try:
             locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8') 
@@ -276,7 +291,7 @@ def generar_resolucion_final():
             "responsable": responsable_resolucion
         }
 
-        # 🔥 Registro en Excel FCI y cálculo de consecutivo
+        #  Registro en Excel FCI y cálculo de consecutivo
         numero_resolucion = obtener_y_registrar_resolucion(datos, usuario=responsable_resolucion)
         datos["numero_resolucion"] = numero_resolucion
 
@@ -303,9 +318,14 @@ def generar_resolucion_final():
                 else:
                     return jsonify({"error": f"Archivo no admitido: {archivo.filename}"}), 400
 
-            ruta_docx_final = generador_doc.generar_resolucion_word(
-                datos, cursos, str(ruta_temp), nombre_docx, rutas_pdfs_anexos
-            )
+            if tipo_certificado == "esri":
+                ruta_docx_final = generador_doc.generar_resolucion_esri(
+                    datos, cursos, str(ruta_temp), nombre_docx, rutas_pdfs_anexos
+                )
+            else:
+                ruta_docx_final = generador_doc.generar_resolucion_opened(
+                    datos, cursos, str(ruta_temp), nombre_docx, rutas_pdfs_anexos
+                )
 
             with open(ruta_docx_final, "rb") as f_in:
                 docx_buffer = io.BytesIO(f_in.read())

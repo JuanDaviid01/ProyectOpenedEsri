@@ -78,21 +78,41 @@ def extraer_info_esri(archivo_stream):
     try:
         with fitz.open(stream=archivo_stream, filetype="pdf") as doc:
             texto = "".join(pagina.get_text("text") for pagina in doc)
-        texto_limpio = re.sub(r"\s+", " ", texto)
-        patrones = {
-            "estudiante": r"(?i)recognizes\s+that\s+(.*?)\s+has\s+attended",
-            "curso": r"(?i)web\s+course\s+(.*?)\s+(?=\d+\s*(?:hour|minute|day))",
-            "fecha": r"(?i)Completed\s+on\s+([a-zA-Z]+\s+\d{1,2},\s+\d{4})"
-        }
 
+        # Reemplazar espacios duros y caracteres no mapeados (ej: U+FFFD -> Ñ)
+        texto_limpio = texto.replace('\xa0', ' ').replace('\ufffd', 'Ñ')
         resultados = {}
-        for llave, regex in patrones.items():
-            match = re.search(regex, texto_limpio)
-            resultados[llave] = match.group(1).strip() if match else "N/A"
+
+        # 1. ESTUDIANTE
+        patron_estudiante = r"(?i)(?:recognizes|certifies)\s+that\s*\n?\s*(.*?)\s*\n?\s*(?:has\s+attended|has\s+successfully\s+completed|has\s+completed)"
+        match_est = re.search(patron_estudiante, texto_limpio, re.DOTALL)
+        if match_est:
+            nombre = match_est.group(1).replace('\n', ' ').strip(" :,-_")
+            resultados["estudiante"] = re.sub(r"\s+", " ", nombre).upper()
+        else:
+            resultados["estudiante"] = "N/A"
+
+        # 2. CURSO
+        patron_curso = r"(?i)(?:has\s+attended|has\s+completed)\s+(?:the\s+)?(?:web\s+|training\s+|instructor-led\s+)?course\s*\n?\s*(.*?)\s*\n?\s*(?=\d+\s*(?:hour|minute|day|hr|min)|Completed|Issued|Date|\Z)"
+        match_cur = re.search(patron_curso, texto_limpio, re.DOTALL)
+        if match_cur:
+            curso_nombre = match_cur.group(1).replace('\n', ' ').strip(" :,-_")
+            resultados["curso"] = re.sub(r"\s+", " ", curso_nombre)
+        else:
+            resultados["curso"] = "N/A"
+
+        # 3. FECHA
+        patron_fecha = r"(?i)(?:Completed|Issued)\s+on\s+([a-zA-Z]+\s+\d{1,2},\s+\d{4})"
+        match_fec = re.search(patron_fecha, texto_limpio)
+        if match_fec:
+            fecha_raw = match_fec.group(1).strip()
+            resultados["fecha"] = normalizar_fecha(fecha_raw, "esri")
+        else:
+            resultados["fecha"] = "N/A"
+
+        # 4. NOTA (Aprobación cualitativa para certificados ESRI)
         resultados["nota"] = "Aprobado"
 
-        if resultados.get("fecha") != "N/A":
-            resultados["fecha"] = normalizar_fecha(resultados["fecha"], "esri")
         return resultados
 
     except Exception as e:

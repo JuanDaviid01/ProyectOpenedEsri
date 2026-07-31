@@ -77,8 +77,8 @@ function eliminarArchivo(index) {
 // Validar documentos
 btnValidar.addEventListener('click', async () => {
     const codigoEstudiante = inputCodigo.value.trim();
-    if (archivosEnMemoria.length < 3) {
-        alert("Error: La normativa exige un mínimo de 3 certificados para este proceso.");
+    if (archivosEnMemoria.length < 1) {
+        alert("Error: Cargue al menos 1 certificado para realizar la validación.");
         return;
     }
     if (!codigoEstudiante) {
@@ -160,8 +160,8 @@ btnGenerar.addEventListener('click', async () => {
         alert("Primero debe validar los documentos antes de generar la resolución.");
         return;
     }
-    if (archivosEnMemoria.length < 3) {
-        alert("Error: La normativa exige un mínimo de 3 certificados para este proceso.");
+    if (archivosEnMemoria.length < 1) {
+        alert("Error: Cargue al menos 1 certificado para este proceso.");
         return;
     }
     if (!selectTipo.value) {
