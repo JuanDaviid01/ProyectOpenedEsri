@@ -331,27 +331,42 @@ def generar_resolucion_final():
                     }), 400
                 cursos_vistos.add(c_nombre)
 
+        # Parseo de materias a homologar (única o selección múltiple)
+        materias_raw = request.form.get("materia_homologar", "Electiva I").strip()
+        materias_lista = []
+        if materias_raw.startswith("["):
+            try:
+                materias_lista = json.loads(materias_raw)
+            except json.JSONDecodeError:
+                materias_lista = [materias_raw]
+        else:
+            materias_lista = [m.strip() for m in materias_raw.split(",") if m.strip()]
+
+        if not materias_lista:
+            materias_lista = ["Electiva I"]
+
         # Validar restricción de proveedor (ESRI solo para Posgrados)
         if tipo_certificado == "esri" and not es_posgrado(programa_destino):
             return jsonify({
                 "error": "Los certificados de ESRI solo están permitidos para programas de Posgrado (Especializaciones y Maestrías)."
             }), 400
 
-        # Validar cantidad exacta de certificados según créditos o regla ESRI
-        creditos_asignados = MAPA_CREDITOS.get(normalizar_texto(programa_destino), "3")
+        # Validar cantidad acumulada de certificados según materias seleccionadas
+        creditos_unidad = int(MAPA_CREDITOS.get(normalizar_texto(programa_destino), "3"))
+        num_materias = len(materias_lista)
+
         if tipo_certificado == "esri":
-            certificados_esperados = 2
+            certs_por_materia = 2
+            certificados_esperados = num_materias * 2
         else:
-            try:
-                certificados_esperados = int(creditos_asignados)
-            except (ValueError, TypeError):
-                certificados_esperados = 3
+            certs_por_materia = creditos_unidad
+            certificados_esperados = num_materias * creditos_unidad
 
         if len(resultados) != certificados_esperados:
             if tipo_certificado == "esri":
-                msg_err = f"Los certificados de ESRI requieren exactamente 2 archivos adjuntos para homologar en posgrados (se recibieron {len(resultados)})."
+                msg_err = f"Ha seleccionado {num_materias} materia(s) en posgrado con ESRI (se requieren 2 certificados por materia, total {certificados_esperados}). Se recibieron {len(resultados)}."
             else:
-                msg_err = f"La asignatura seleccionada en este programa equivale a {creditos_asignados} crédito(s), por lo que se requieren exactamente {certificados_esperados} certificado(s) de Opened (se recibieron {len(resultados)})."
+                msg_err = f"Ha seleccionado {num_materias} materia(s) de {creditos_unidad} crédito(s) cada una (total {certificados_esperados} certificados para Opened). Se recibieron {len(resultados)}."
             return jsonify({"error": msg_err}), 400
 
         primer_resultado = resultados[0]
@@ -402,9 +417,40 @@ def generar_resolucion_final():
                 nota_definitiva = "0.0"
 
 
-        nombre_estudiante = str(primer_resultado.get("estudiante", "")).strip().upper()
+        nombre_estudiante_manual = request.form.get("nombre_estudiante_manual", "").strip()
+
+        if tipo_certificado == "esri" and nombre_estudiante_manual:
+            nombre_estudiante = nombre_estudiante_manual.upper()
+        else:
+            nombre_estudiante = str(primer_resultado.get("estudiante", "")).strip().upper()
+
         if not nombre_estudiante or nombre_estudiante == "N/A":
             nombre_estudiante = "SIN NOMBRE"
+
+        # Mapeo de códigos de asignatura y certificados por cada materia seleccionada
+        materias_mapeadas = []
+        prog_norm = normalizar_texto(programa_destino)
+        mapa_prog = CODIGOS_ASIGNATURAS.get(prog_norm, {})
+
+        for idx, mat_nombre in enumerate(materias_lista):
+            mat_norm = normalizar_texto(mat_nombre)
+            codigo_asig = mapa_prog.get(mat_norm, "C5909002")
+
+            inicio_idx = idx * certs_por_materia
+            fin_idx = inicio_idx + certs_por_materia
+            certs_subgrupo = resultados[inicio_idx:fin_idx]
+
+            materias_mapeadas.append({
+                "materia": mat_nombre,
+                "codigo_asignatura": codigo_asig,
+                "creditos": creditos_unidad,
+                "certificados": certs_subgrupo
+            })
+
+        # Mapeo retrocompatible para la resolución
+        materia_homologar = materias_lista[0] if materias_lista else "Electiva I"
+        codigo_asignatura = materias_mapeadas[0]["codigo_asignatura"] if materias_mapeadas else "C5909002"
+        creditos_asignados = str(creditos_unidad * num_materias)
 
         datos = {
             "fecha_resolucion": fecha_actual,
@@ -412,6 +458,10 @@ def generar_resolucion_final():
             "codigo_estudiante": codigo_estudiante,
             "documento_estudiante": codigo_estudiante,
             "programa": programa_destino,
+            "materias_homologadas": materias_mapeadas,
+            "materia_homologar": ", ".join(materias_lista),
+            "codigo_asignatura": codigo_asignatura,
+            "creditos": creditos_asignados,
             "nombre_curso": primer_resultado.get("curso", "N/A"),
             "nota_curso": primer_resultado.get("nota", "N/A"),
             "dia_constancia": dia_constancia,

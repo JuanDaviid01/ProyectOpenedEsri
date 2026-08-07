@@ -59,12 +59,19 @@ const ELECTIVAS_POR_PROGRAMA = {
     "Maestría en Educación y Transformación Digital": ["Electiva I", "Electiva II", "Electiva III", "Electiva IV"]
 };
 
+const btnCuantitativa = document.querySelector('#tipo_nota .seg-opcion[data-valor="cuantitativa"]');
+const btnCualitativa = document.querySelector('#tipo_nota .seg-opcion[data-valor="cualitativa"]');
+const inputTipoNotaValor = document.getElementById('tipo_nota_valor');
+
 // Segmentador tipo de nota
 document.querySelectorAll('#tipo_nota .seg-opcion').forEach(btn => {
     btn.addEventListener('click', () => {
+        if (btn.disabled || btn.classList.contains('deshabilitado')) return;
+
         document.querySelectorAll('#tipo_nota .seg-opcion').forEach(b => b.classList.remove('activo'));
         btn.classList.add('activo');
-        document.getElementById('tipo_nota_valor').value = btn.dataset.valor;
+        inputTipoNotaValor.value = btn.dataset.valor;
+        invalidarValidacion(false);
     });
 });
 
@@ -76,39 +83,57 @@ const btnValidar = document.getElementById('btn-validar');
 const btnGenerar = document.getElementById('btn-generar');
 const inputCodigo = document.getElementById('codigo_estudiante');
 const selectTipo = document.getElementById('tipo_certificado');
+const optEsri = selectTipo ? selectTipo.querySelector('option[value="esri"]') : null;
 const selectPrograma = document.getElementById('programa_destino');
-const selectMateria = document.getElementById('materia_homologar');
+const contenedorMaterias = document.getElementById('contenedor_materias');
+const grupoNombreManual = document.getElementById('grupo_nombre_manual');
+const inputNombreManual = document.getElementById('nombre_estudiante_manual');
+
+function obtenerMateriasSeleccionadas() {
+    if (!contenedorMaterias) return [];
+    const checkboxes = contenedorMaterias.querySelectorAll('input[type="checkbox"]:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+}
 
 // Función para actualizar dinámicamente las materias a homologar según el programa
 function actualizarOpcionesElectivas() {
     const programaSeleccionado = selectPrograma.value;
-    selectMateria.innerHTML = '';
+    contenedorMaterias.innerHTML = '';
 
     if (!programaSeleccionado || !ELECTIVAS_POR_PROGRAMA[programaSeleccionado]) {
-        selectMateria.disabled = true;
-        const opt = document.createElement('option');
-        opt.value = '';
-        opt.textContent = 'Seleccione primero un programa';
-        opt.disabled = true;
-        opt.selected = true;
-        selectMateria.appendChild(opt);
+        contenedorMaterias.innerHTML = '<span class="placeholder-materias">Seleccione primero un programa</span>';
         return;
     }
 
-    selectMateria.disabled = false;
-    const defaultOpt = document.createElement('option');
-    defaultOpt.value = '';
-    defaultOpt.textContent = 'Seleccionar materia';
-    defaultOpt.disabled = true;
-    defaultOpt.selected = true;
-    selectMateria.appendChild(defaultOpt);
-
     const electivasDisponibles = ELECTIVAS_POR_PROGRAMA[programaSeleccionado];
-    electivasDisponibles.forEach(electiva => {
-        const opt = document.createElement('option');
-        opt.value = electiva;
-        opt.textContent = electiva;
-        selectMateria.appendChild(opt);
+    electivasDisponibles.forEach((electiva, idx) => {
+        const label = document.createElement('label');
+        label.className = 'materia-checkbox-label';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.name = 'materias_homologar';
+        checkbox.value = electiva;
+        if (idx === 0) {
+            checkbox.checked = true;
+            label.classList.add('seleccionado');
+        }
+
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) {
+                label.classList.add('seleccionado');
+            } else {
+                label.classList.remove('seleccionado');
+            }
+            invalidarValidacion(false);
+        });
+
+        const span = document.createElement('span');
+        span.textContent = electiva;
+
+        label.appendChild(checkbox);
+        label.appendChild(span);
+        contenedorMaterias.appendChild(label);
     });
 }
 
@@ -140,23 +165,82 @@ inputCodigo.addEventListener('input', () => {
         selectPrograma.value = '';
         actualizarOpcionesElectivas();
         selectTipo.value = '';
+        if (optEsri) optEsri.disabled = false;
+
+        // Resetear nombre manual ESRI
+        if (inputNombreManual) inputNombreManual.value = '';
+        if (grupoNombreManual) grupoNombreManual.style.display = 'none';
+
+        // Resetear tipo de nota
+        document.querySelectorAll('#tipo_nota .seg-opcion').forEach(b => {
+            b.classList.remove('activo');
+            b.disabled = false;
+            b.classList.remove('deshabilitado');
+        });
+        inputTipoNotaValor.value = '';
         
         // Resetear validación
         invalidarValidacion(false);
     }
 });
 
-// Eventos de cambios en campos del formulario
+function actualizarComportamientoTipoNota() {
+    const proveedor = selectTipo.value;
+
+    if (proveedor === 'esri') {
+        btnCuantitativa.disabled = true;
+        btnCuantitativa.classList.remove('activo');
+        btnCuantitativa.classList.add('deshabilitado');
+
+        btnCualitativa.disabled = false;
+        btnCualitativa.classList.remove('deshabilitado');
+        btnCualitativa.classList.add('activo');
+        inputTipoNotaValor.value = 'cualitativa';
+
+        if (grupoNombreManual) {
+            grupoNombreManual.style.display = 'block';
+        }
+    } else {
+        btnCuantitativa.disabled = false;
+        btnCuantitativa.classList.remove('deshabilitado');
+
+        btnCualitativa.disabled = false;
+        btnCualitativa.classList.remove('deshabilitado');
+
+        if (grupoNombreManual) {
+            grupoNombreManual.style.display = 'none';
+        }
+        if (inputNombreManual) {
+            inputNombreManual.value = '';
+        }
+    }
+}
+
+function actualizarOpcionesProveedor() {
+    const programa = selectPrograma.value;
+
+    if (!programa) {
+        if (optEsri) optEsri.disabled = false;
+        return;
+    }
+
+    if (!esPosgrado(programa)) {
+        if (optEsri) optEsri.disabled = true;
+        selectTipo.value = 'opened';
+        actualizarComportamientoTipoNota();
+    } else {
+        if (optEsri) optEsri.disabled = false;
+    }
+}
+
 selectPrograma.addEventListener('change', () => {
     actualizarOpcionesElectivas();
-    invalidarValidacion(false);
-});
-
-selectMateria.addEventListener('change', () => {
+    actualizarOpcionesProveedor();
     invalidarValidacion(false);
 });
 
 selectTipo.addEventListener('change', () => {
+    actualizarComportamientoTipoNota();
     invalidarValidacion(false);
 });
 
@@ -250,10 +334,14 @@ const CREDITOS_POR_PROGRAMA = {
 };
 
 function calcularCertificadosEsperados(programa, tipoCertificado) {
+    const materias = obtenerMateriasSeleccionadas();
+    if (materias.length === 0) return 0;
+
     if (tipoCertificado === 'esri') {
-        return 2;
+        return materias.length * 2;
     }
-    return CREDITOS_POR_PROGRAMA[programa] || 3;
+    const creditosUnidad = CREDITOS_POR_PROGRAMA[programa] || 3;
+    return materias.length * creditosUnidad;
 }
 
 // Validar documentos
@@ -269,13 +357,19 @@ btnValidar.addEventListener('click', async () => {
         return;
     }
 
-    if (!selectMateria.value) {
-        mostrarToast("Seleccione la materia a homologar antes de validar.", "Materia Requerida", "error");
+    const materiasSeleccionadas = obtenerMateriasSeleccionadas();
+    if (materiasSeleccionadas.length === 0) {
+        mostrarToast("Seleccione al menos una materia a homologar.", "Materia Requerida", "error");
         return;
     }
 
     if (!selectTipo.value) {
         mostrarToast("Seleccione el proveedor del certificado.", "Proveedor Requerido", "error");
+        return;
+    }
+
+    if (!inputTipoNotaValor.value) {
+        mostrarToast("Seleccione el tipo de nota (Cuantitativa o Cualitativa).", "Tipo de Nota Requerido", "error");
         return;
     }
 
@@ -285,14 +379,14 @@ btnValidar.addEventListener('click', async () => {
         return;
     }
 
-    // Validar número exacto de certificados según créditos o regla ESRI
+    // Validar número exacto acumulado de certificados
     const esperados = calcularCertificadosEsperados(selectPrograma.value, selectTipo.value);
     if (archivosEnMemoria.length !== esperados) {
         if (selectTipo.value === 'esri') {
-            mostrarToast(`Los certificados de ESRI requieren exactamente 2 archivos adjuntos para homologar en posgrados. Ha cargado ${archivosEnMemoria.length}.`, "Cantidad de Certificados Incorrecta", "error");
+            mostrarToast(`Ha seleccionado ${materiasSeleccionadas.length} materia(s) en posgrado con ESRI (se requieren 2 certificados por materia, total ${esperados}). Ha cargado ${archivosEnMemoria.length}.`, "Cantidad de Certificados Incorrecta", "error");
         } else {
-            const creditos = CREDITOS_POR_PROGRAMA[selectPrograma.value] || 3;
-            mostrarToast(`La asignatura seleccionada en este programa equivale a ${creditos} crédito(s), por lo que se requieren exactamente ${esperados} certificado(s) de Opened. Ha cargado ${archivosEnMemoria.length}.`, "Cantidad de Certificados Incorrecta", "error");
+            const creditosUnidad = CREDITOS_POR_PROGRAMA[selectPrograma.value] || 3;
+            mostrarToast(`Ha seleccionado ${materiasSeleccionadas.length} materia(s) de ${creditosUnidad} crédito(s) cada una (total ${esperados} certificados para Opened). Ha cargado ${archivosEnMemoria.length}.`, "Cantidad de Certificados Incorrecta", "error");
         }
         return;
     }
@@ -305,6 +399,7 @@ btnValidar.addEventListener('click', async () => {
 
     formData.append('tipo_certificado', selectTipo.value);
     formData.append('programa_destino', selectPrograma.value);
+    formData.append('materias_homologar', JSON.stringify(materiasSeleccionadas));
 
     try {
         mostrarToast("Analizando y validando certificados cargados...", "Validando", "info", 2000);
@@ -359,9 +454,12 @@ btnValidar.addEventListener('click', async () => {
             return;
         }
 
+        const nombreManual = (inputNombreManual && inputNombreManual.value) ? inputNombreManual.value.trim() : '';
+        const nombreFinal = (selectTipo.value === 'esri' && nombreManual) ? nombreManual : (datosCrudos[0].estudiante || '').trim();
+
         estudianteValidado = {
             codigo: codigoEstudiante,
-            nombre: (datosCrudos[0].estudiante || '').trim(),
+            nombre: nombreFinal,
             certificados: datosCrudos.map(cert => ({
                 estudiante: cert.estudiante || "N/A",
                 curso: cert.curso || "N/A",
@@ -393,13 +491,19 @@ btnGenerar.addEventListener('click', async () => {
         return;
     }
 
-    if (!selectMateria.value) {
-        mostrarToast("Seleccione la materia a homologar.", "Materia Requerida", "error");
+    const materiasSeleccionadas = obtenerMateriasSeleccionadas();
+    if (materiasSeleccionadas.length === 0) {
+        mostrarToast("Seleccione al menos una materia a homologar.", "Materia Requerida", "error");
         return;
     }
 
     if (!selectTipo.value) {
         mostrarToast("Seleccione el proveedor del certificado.", "Proveedor Requerido", "error");
+        return;
+    }
+
+    if (!inputTipoNotaValor.value) {
+        mostrarToast("Seleccione el tipo de nota (Cuantitativa o Cualitativa).", "Tipo de Nota Requerido", "error");
         return;
     }
 
@@ -409,14 +513,14 @@ btnGenerar.addEventListener('click', async () => {
         return;
     }
 
-    // Validar cantidad esperada
+    // Validar cantidad esperada acumulada
     const esperados = calcularCertificadosEsperados(selectPrograma.value, selectTipo.value);
     if (archivosEnMemoria.length !== esperados) {
         if (selectTipo.value === 'esri') {
-            mostrarToast(`Los certificados de ESRI requieren exactamente 2 archivos adjuntos para homologar en posgrados. Ha cargado ${archivosEnMemoria.length}.`, "Cantidad de Certificados Incorrecta", "error");
+            mostrarToast(`Ha seleccionado ${materiasSeleccionadas.length} materia(s) en posgrado con ESRI (se requieren 2 certificados por materia, total ${esperados}). Ha cargado ${archivosEnMemoria.length}.`, "Cantidad de Certificados Incorrecta", "error");
         } else {
-            const creditos = CREDITOS_POR_PROGRAMA[selectPrograma.value] || 3;
-            mostrarToast(`La asignatura seleccionada en este programa equivale a ${creditos} crédito(s), por lo que se requieren exactamente ${esperados} certificado(s) de Opened. Ha cargado ${archivosEnMemoria.length}.`, "Cantidad de Certificados Incorrecta", "error");
+            const creditosUnidad = CREDITOS_POR_PROGRAMA[selectPrograma.value] || 3;
+            mostrarToast(`Ha seleccionado ${materiasSeleccionadas.length} materia(s) de ${creditosUnidad} crédito(s) cada una (total ${esperados} certificados para Opened). Ha cargado ${archivosEnMemoria.length}.`, "Cantidad de Certificados Incorrecta", "error");
         }
         return;
     }
@@ -425,11 +529,14 @@ btnGenerar.addEventListener('click', async () => {
         mostrarToast("Generando documento de resolución final con anexos...", "Procesando", "info", 3000);
 
         const formData = new FormData();
+        const nombreManual = (inputNombreManual && inputNombreManual.value) ? inputNombreManual.value.trim() : '';
+
         formData.append("codigo_estudiante", estudianteValidado.codigo);
         formData.append("tipo_certificado", selectTipo.value);
         formData.append("programa_destino", selectPrograma.value);
-        formData.append("materia_homologar", selectMateria.value);
+        formData.append("materia_homologar", JSON.stringify(materiasSeleccionadas));
         formData.append("tipo_nota", document.getElementById('tipo_nota_valor').value);
+        formData.append("nombre_estudiante_manual", nombreManual);
         formData.append(
             "resultados",
             JSON.stringify(estudianteValidado.certificados)
