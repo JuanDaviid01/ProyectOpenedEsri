@@ -43,18 +43,20 @@ function mostrarToast(mensaje, titulo = '', tipo = 'info', duracion = 4000) {
 
 // MAPEO DE ELECTIVAS DISPONIBLES POR PROGRAMA
 const ELECTIVAS_POR_PROGRAMA = {
-    "Ingeniería en Sistemas y Telecomunicaciones Presencial": ["Electiva I", "Electiva II"],
-    "Ingeniería en Sistemas y Telecomunicaciones Virtual": ["Electiva I", "Electiva II"],
-    "Ingeniería en analítica de datos presencial": ["Electiva I", "Electiva II", "Electiva III"],
-    "Ingeniería en analítica de datos virtual": ["Electiva I", "Electiva II", "Electiva III"],
-    "Ingeniería Logística Presencial": ["Electiva I", "Electiva II", "Electiva III", "Electiva IV"],
-    "Ingeniería Logística Virtual": ["Electiva I", "Electiva II", "Electiva III", "Electiva IV"],
-    "Ingeniería en Seguridad de la Información Presencial": ["Electiva I", "Electiva II"],
-    "Ingeniería en Seguridad de la Información Virtual": ["Electiva I", "Electiva II"],
+    "Ingeniería en Sistemas y Telecomunicaciones": ["Electiva I", "Electiva II"],
+    "Ingeniería de Sistemas (Virtual)": ["Electiva I", "Electiva II"],
+    "Ingeniería en Analítica de Datos (Presencial)": ["Electiva I", "Electiva II", "Electiva III"],
+    "Ingeniería en Analítica de Datos (Virtual)": ["Electiva I", "Electiva II", "Electiva III"],
+    "Ingeniería Logística (Presencial)": ["Electiva I", "Electiva II", "Electiva III", "Electiva IV"],
+    "Ingeniería Logística (Virtual)": ["Electiva I", "Electiva II", "Electiva III", "Electiva IV"],
+    "Ingeniería en Seguridad de la Información (Presencial)": ["Electiva I", "Electiva II"],
+    "Ingeniería en Seguridad de la Información (Virtual)": ["Electiva I", "Electiva II"],
     "Ingeniería Industrial": ["Electiva I", "Electiva II"],
-    "Especialización en Sistemas de información geográfica": ["Electiva I", "Electiva II"],
-    "Maestría en Tecnologías de la información geográfica": ["Electiva I", "Electiva II"],
-    "Maestría en Educación y transformación digital": ["Electiva I", "Electiva II", "Electiva III", "Electiva IV"]
+    "Especialización en Sistemas de Información Geográfica (Presencial)": ["Electiva I", "Electiva II"],
+    "Especialización en Sistemas de Información Geográfica (Virtual)": ["Electiva I", "Electiva II"],
+    "Maestría en Tecnologías de la Información Geográfica (Presencial)": ["Electiva I", "Electiva II"],
+    "Maestría en Tecnologías de la Información Geográfica (Virtual)": ["Electiva I", "Electiva II"],
+    "Maestría en Educación y Transformación Digital": ["Electiva I", "Electiva II", "Electiva III", "Electiva IV"]
 };
 
 // Segmentador tipo de nota
@@ -160,9 +162,23 @@ selectTipo.addEventListener('change', () => {
 
 // Cargar archivos en memoria
 inputArchivos.addEventListener('change', () => {
-    Array.from(inputArchivos.files).forEach(archivo => {
-        archivosEnMemoria.push(archivo);
+    const nuevosArchivos = Array.from(inputArchivos.files);
+    let duplicadosDetectados = [];
+
+    nuevosArchivos.forEach(archivoNuevo => {
+        const yaExiste = archivosEnMemoria.some(a =>
+            a.name === archivoNuevo.name && a.size === archivoNuevo.size
+        );
+        if (yaExiste) {
+            duplicadosDetectados.push(archivoNuevo.name);
+        } else {
+            archivosEnMemoria.push(archivoNuevo);
+        }
     });
+
+    if (duplicadosDetectados.length > 0) {
+        mostrarToast(`No se agregaron archivos duplicados (${duplicadosDetectados.join(', ')}). Cargue certificados diferentes.`, "Archivo Duplicado", "advertencia");
+    }
 
     inputArchivos.value = '';
     renderizarLista();
@@ -211,6 +227,35 @@ function eliminarArchivo(index) {
     renderizarLista();
 }
 
+function esPosgrado(programa) {
+    const progNorm = (programa || '').toLowerCase();
+    return progNorm.includes('especializac') || progNorm.includes('maestri');
+}
+
+const CREDITOS_POR_PROGRAMA = {
+    "Ingeniería en Sistemas y Telecomunicaciones": 3,
+    "Ingeniería de Sistemas (Virtual)": 3,
+    "Ingeniería en Analítica de Datos (Presencial)": 2,
+    "Ingeniería en Analítica de Datos (Virtual)": 2,
+    "Ingeniería Logística (Presencial)": 3,
+    "Ingeniería Logística (Virtual)": 3,
+    "Ingeniería en Seguridad de la Información (Presencial)": 3,
+    "Ingeniería en Seguridad de la Información (Virtual)": 3,
+    "Ingeniería Industrial": 2,
+    "Especialización en Sistemas de Información Geográfica (Presencial)": 3,
+    "Especialización en Sistemas de Información Geográfica (Virtual)": 3,
+    "Maestría en Tecnologías de la Información Geográfica (Presencial)": 3,
+    "Maestría en Tecnologías de la Información Geográfica (Virtual)": 3,
+    "Maestría en Educación y Transformación Digital": 2
+};
+
+function calcularCertificadosEsperados(programa, tipoCertificado) {
+    if (tipoCertificado === 'esri') {
+        return 2;
+    }
+    return CREDITOS_POR_PROGRAMA[programa] || 3;
+}
+
 // Validar documentos
 btnValidar.addEventListener('click', async () => {
     const codigoEstudiante = inputCodigo.value.trim();
@@ -219,13 +264,36 @@ btnValidar.addEventListener('click', async () => {
         return;
     }
 
-    if (archivosEnMemoria.length < 1) {
-        mostrarToast("Cargue al menos 1 certificado para realizar la validación.", "Archivos Requeridos", "error");
+    if (!selectPrograma.value) {
+        mostrarToast("Seleccione el programa de destino antes de validar.", "Programa Requerido", "error");
+        return;
+    }
+
+    if (!selectMateria.value) {
+        mostrarToast("Seleccione la materia a homologar antes de validar.", "Materia Requerida", "error");
         return;
     }
 
     if (!selectTipo.value) {
         mostrarToast("Seleccione el proveedor del certificado.", "Proveedor Requerido", "error");
+        return;
+    }
+
+    // Validar restricción de proveedor (ESRI solo para Posgrados)
+    if (selectTipo.value === 'esri' && !esPosgrado(selectPrograma.value)) {
+        mostrarToast("Los certificados de ESRI solo están permitidos para programas de Posgrado (Especializaciones y Maestrías).", "Proveedor No Permitido", "error");
+        return;
+    }
+
+    // Validar número exacto de certificados según créditos o regla ESRI
+    const esperados = calcularCertificadosEsperados(selectPrograma.value, selectTipo.value);
+    if (archivosEnMemoria.length !== esperados) {
+        if (selectTipo.value === 'esri') {
+            mostrarToast(`Los certificados de ESRI requieren exactamente 2 archivos adjuntos para homologar en posgrados. Ha cargado ${archivosEnMemoria.length}.`, "Cantidad de Certificados Incorrecta", "error");
+        } else {
+            const creditos = CREDITOS_POR_PROGRAMA[selectPrograma.value] || 3;
+            mostrarToast(`La asignatura seleccionada en este programa equivale a ${creditos} crédito(s), por lo que se requieren exactamente ${esperados} certificado(s) de Opened. Ha cargado ${archivosEnMemoria.length}.`, "Cantidad de Certificados Incorrecta", "error");
+        }
         return;
     }
 
@@ -236,6 +304,7 @@ btnValidar.addEventListener('click', async () => {
     });
 
     formData.append('tipo_certificado', selectTipo.value);
+    formData.append('programa_destino', selectPrograma.value);
 
     try {
         mostrarToast("Analizando y validando certificados cargados...", "Validando", "info", 2000);
@@ -268,6 +337,28 @@ btnValidar.addEventListener('click', async () => {
             return;
         }
 
+        // Validación de cursos duplicados en el lote
+        const cursosVistos = new Set();
+        let cursoDuplicado = null;
+
+        for (const cert of datosCrudos) {
+            const cursoKey = (cert.curso || '').trim().toLowerCase();
+            if (cursoKey && cursoKey !== 'n/a') {
+                if (cursosVistos.has(cursoKey)) {
+                    cursoDuplicado = cert.curso;
+                    break;
+                }
+                cursosVistos.add(cursoKey);
+            }
+        }
+
+        if (cursoDuplicado) {
+            estudianteValidado = null;
+            btnGenerar.disabled = true;
+            mostrarToast(`Se detectó el certificado del curso "${cursoDuplicado}" duplicado en el mismo lote. Adjunte certificados de cursos diferentes.`, "Certificado Duplicado", "error");
+            return;
+        }
+
         estudianteValidado = {
             codigo: codigoEstudiante,
             nombre: (datosCrudos[0].estudiante || '').trim(),
@@ -297,15 +388,6 @@ btnGenerar.addEventListener('click', async () => {
         mostrarToast("Primero debe validar los documentos antes de generar la resolución.", "Validación Requerida", "advertencia");
         return;
     }
-    if (archivosEnMemoria.length < 1) {
-        mostrarToast("Cargue al menos 1 certificado para este proceso.", "Archivos Requeridos", "error");
-        return;
-    }
-    if (!selectTipo.value) {
-        mostrarToast("Seleccione el proveedor del certificado.", "Proveedor Requerido", "error");
-        return;
-    }
-
     if (!selectPrograma.value) {
         mostrarToast("Seleccione el programa de destino.", "Programa Requerido", "error");
         return;
@@ -313,6 +395,29 @@ btnGenerar.addEventListener('click', async () => {
 
     if (!selectMateria.value) {
         mostrarToast("Seleccione la materia a homologar.", "Materia Requerida", "error");
+        return;
+    }
+
+    if (!selectTipo.value) {
+        mostrarToast("Seleccione el proveedor del certificado.", "Proveedor Requerido", "error");
+        return;
+    }
+
+    // Validar restricción de proveedor (ESRI solo para Posgrados)
+    if (selectTipo.value === 'esri' && !esPosgrado(selectPrograma.value)) {
+        mostrarToast("Los certificados de ESRI solo están permitidos para programas de Posgrado (Especializaciones y Maestrías).", "Proveedor No Permitido", "error");
+        return;
+    }
+
+    // Validar cantidad esperada
+    const esperados = calcularCertificadosEsperados(selectPrograma.value, selectTipo.value);
+    if (archivosEnMemoria.length !== esperados) {
+        if (selectTipo.value === 'esri') {
+            mostrarToast(`Los certificados de ESRI requieren exactamente 2 archivos adjuntos para homologar en posgrados. Ha cargado ${archivosEnMemoria.length}.`, "Cantidad de Certificados Incorrecta", "error");
+        } else {
+            const creditos = CREDITOS_POR_PROGRAMA[selectPrograma.value] || 3;
+            mostrarToast(`La asignatura seleccionada en este programa equivale a ${creditos} crédito(s), por lo que se requieren exactamente ${esperados} certificado(s) de Opened. Ha cargado ${archivosEnMemoria.length}.`, "Cantidad de Certificados Incorrecta", "error");
+        }
         return;
     }
 

@@ -21,75 +21,114 @@ def normalizar_texto(texto):
     texto_nfkd = unicodedata.normalize('NFKD', texto)
     return "".join([c for c in texto_nfkd if not unicodedata.combining(c)]).lower().strip()
 
+def es_posgrado(programa):
+    prog_norm = normalizar_texto(programa)
+    return "especializac" in prog_norm or "maestri" in prog_norm
+
 CODIGOS_ASIGNATURAS = {
-    # 1. Sistemas y Telecomunicaciones Presencial
-    "ingenieria en sistemas y telecomunicaciones presencial": {
+    # 1. Sistemas y Telecomunicaciones
+    "ingenieria en sistemas y telecomunicaciones": {
         "electiva i": "C5808002",
         "electiva ii": "C5909002",
     },
-    # 2. Sistemas y Telecomunicaciones Virtual
-    "ingenieria en sistemas y telecomunicaciones virtual": {
+
+    # 2. Sistemas (Virtual)
+    "ingenieria de sistemas (virtual)": {
         "electiva i": "CV050036",
         "electiva ii": "CV050039",
     },
-    # 3. Analítica de datos presencial
-    "ingenieria en analitica de datos presencial": {
+
+    # 3. Analítica de datos
+    "ingenieria en analitica de datos (presencial)": {
         "electiva i": "IA030606",
         "electiva ii": "IA030707",
         "electiva iii": "IA030807",
     },
-    # 4. Analítica de datos virtual
-    "ingenieria en analitica de datos virtual": {
+    "ingenieria en analitica de datos (virtual)": {
         "electiva i": "10410606",
         "electiva ii": "10410706",
         "electiva iii": "10410805",
     },
-    # 5. Logística presencial
-    "ingenieria logistica presencial": {
+    # 4. Logística
+    "ingenieria logistica (presencial)": {
         "electiva i": "IL020403",
         "electiva ii": "IL020603",
         "electiva iii": "IL020703",
         "electiva iv": "IL020803",
     },
-    # 6. Logística virtual
-    "ingenieria logistica virtual": {
+    "ingenieria logistica (virtual)": {
         "electiva i": "10310403",
         "electiva ii": "10310603",
         "electiva iii": "10310704",
         "electiva iv": "10310803",
     },
-    # 7. Seguridad de la información presencial
-    "ingenieria en seguridad de la informacion presencial": {
+    # 5. Seguridad de la información
+    "ingenieria en seguridad de la informacion (presencial)": {
         "electiva i": "IS040606",
         "electiva ii": "IS040804",
     },
-    # 8. Seguridad de la información virtual
-    "ingenieria en seguridad de la informacion virtual": {
+    "ingenieria en seguridad de la informacion (virtual)": {
         "electiva i": "10510606",
         "electiva ii": "10510804",
     },
-    # 9. Industrial
+    # 6. Industrial
     "ingenieria industrial": {
         "electiva i": "10710405",
         "electiva ii": "10710503",
     },
-    # 10. Especialización en SIG
-    "especializacion en sistemas de informacion geografica": {
+    # 7. Especialización en SIG (Presencial y Virtual)
+    "especializacion en sistemas de informacion geografica (presencial)": {
         "electiva i": "83060204",
         "electiva ii": "83060207",
     },
-    # 11. Maestría en TIG
-    "maestria en tecnologias de la informacion geografica": {
+    "especializacion en sistemas de informacion geografica (virtual)": {
+        "electiva i": "83060204",
+        "electiva ii": "83060207",
+    },
+    # 8. Maestría en TIG (Presencial y Virtual)
+    "maestria en tecnologias de la informacion geografica (presencial)": {
         "electiva i": "M8040106",
         "electiva ii": "M8040206",
     },
-    # 12. Maestría en Educación y transformación digital
+    "maestria en tecnologias de la informacion geografica (virtual)": {
+        "electiva i": "M8040106",
+        "electiva ii": "M8040206",
+    },
+    # 9. Maestría en Educación y Transformación Digital
     "maestria en educacion y transformacion digital": {
         "electiva i": "M1510102",
         "electiva ii": "M1510103",
         "electiva iii": "M1510204",
         "electiva iv": "M1510303",
     }
+}
+
+MAPA_CREDITOS = {
+    # Sistemas y Telecomunicaciones
+    "ingenieria en sistemas y telecomunicaciones": "3",
+    "ingenieria en sistemas y telecomunicaciones (presencial)": "3",
+    "ingenieria de sistemas (virtual)": "3",
+    "ingenieria en sistemas y telecomunicaciones (virtual)": "3",
+    # Analítica de Datos
+    "ingenieria en analitica de datos (presencial)": "2",
+    "ingenieria en analitica de datos (virtual)": "2",
+    # Logística
+    "ingenieria logistica (presencial)": "3",
+    "ingenieria logistica (virtual)": "3",
+    # Seguridad de la Información
+    "ingenieria en seguridad de la informacion (presencial)": "3",
+    "ingenieria en seguridad de la informacion (virtual)": "3",
+    # Industrial
+    "ingenieria industrial": "2",
+    # Postgrados SIG
+    "especializacion en sistemas de informacion geografica": "3",
+    "especializacion en sistemas de informacion geografica (presencial)": "3",
+    "especializacion en sistemas de informacion geografica (virtual)": "3",
+    "maestria en tecnologias de la informacion geografica": "3",
+    "maestria en tecnologias de la informacion geografica (presencial)": "3",
+    "maestria en tecnologias de la informacion geografica (virtual)": "3",
+    # Maestría Educación
+    "maestria en educacion y transformacion digital": "2"
 }
 
 app = Flask(__name__)
@@ -112,9 +151,7 @@ def guardar_usuarios(usuarios):
     with open(USUARIOS_FILE, "w", encoding="utf-8") as f:
         json.dump(usuarios, f, ensure_ascii=False, indent=2)
 
-# ==========================================
-# LOGIN / REGISTRO / LOGOUT
-# ==========================================
+
 @app.route("/login", methods=["GET"])
 def login_page():
     session.clear()
@@ -193,9 +230,7 @@ def app_page():
     resp.headers["Pragma"] = "no-cache"
     return resp
 
-# ==========================================
-# EXTRAER INFO DE CERTIFICADOS
-# ==========================================
+
 @app.route("/api/extraer", methods=["POST"])
 def procesar_certificado():
     if not session.get("usuario"):
@@ -206,10 +241,17 @@ def procesar_certificado():
 
         archivos = request.files.getlist("archivos")
         tipo_certificado = request.form.get("tipo_certificado", "").strip().lower()
+        programa_destino = request.form.get("programa_destino", "").strip()
 
         if not tipo_certificado:
             return jsonify({"error": "Se requiere especificar el tipo_certificado (opened o esri)."}), 400
 
+        if tipo_certificado == "esri" and programa_destino and not es_posgrado(programa_destino):
+            return jsonify({
+                "error": "Los certificados de ESRI solo están permitidos para programas de Posgrado (Especializaciones y Maestrías)."
+            }), 400
+
+        cursos_vistos = set()
         resultados_globales = []
         for archivo in archivos:
             if archivo.filename == '':
@@ -227,6 +269,15 @@ def procesar_certificado():
                     "error": f"El archivo '{archivo.filename}' no es un certificado válido de {tipo_certificado.upper()} o es ilegible."
                 }), 400
 
+            # Validación de duplicados por nombre de curso
+            curso_nombre = str(resultado.get("curso", "")).strip().lower()
+            if curso_nombre and curso_nombre != "n/a":
+                if curso_nombre in cursos_vistos:
+                    return jsonify({
+                        "error": f"Se detectó el certificado del curso '{resultado.get('curso')}' duplicado en el mismo lote."
+                    }), 400
+                cursos_vistos.add(curso_nombre)
+
             resultado["nombre_archivo"] = archivo.filename
             resultados_globales.append(resultado)
 
@@ -238,9 +289,7 @@ def procesar_certificado():
     except Exception as e:
         return jsonify({"error": f"Excepción en servidor: {str(e)}"}), 500
 
-# ==========================================
-# GENERAR RESOLUCIÓN FINAL
-# ==========================================
+
 @app.route("/api/generar-resolucion-final", methods=["POST"])
 def generar_resolucion_final():
     if not session.get("usuario"):
@@ -270,10 +319,40 @@ def generar_resolucion_final():
         resultados = json.loads(resultados_json)
         if not resultados:
             return jsonify({"error": "La lista de resultados está vacía."}), 400
-        if len(resultados) < 1:
+
+        # Validar duplicados de cursos en los resultados recibidos
+        cursos_vistos = set()
+        for res in resultados:
+            c_nombre = str(res.get("curso", "")).strip().lower()
+            if c_nombre and c_nombre != "n/a":
+                if c_nombre in cursos_vistos:
+                    return jsonify({
+                        "error": f"Se detectó el certificado del curso '{res.get('curso')}' duplicado en el mismo lote."
+                    }), 400
+                cursos_vistos.add(c_nombre)
+
+        # Validar restricción de proveedor (ESRI solo para Posgrados)
+        if tipo_certificado == "esri" and not es_posgrado(programa_destino):
             return jsonify({
-                "error": "Se requiere al menos 1 certificado válido para homologar."
+                "error": "Los certificados de ESRI solo están permitidos para programas de Posgrado (Especializaciones y Maestrías)."
             }), 400
+
+        # Validar cantidad exacta de certificados según créditos o regla ESRI
+        creditos_asignados = MAPA_CREDITOS.get(normalizar_texto(programa_destino), "3")
+        if tipo_certificado == "esri":
+            certificados_esperados = 2
+        else:
+            try:
+                certificados_esperados = int(creditos_asignados)
+            except (ValueError, TypeError):
+                certificados_esperados = 3
+
+        if len(resultados) != certificados_esperados:
+            if tipo_certificado == "esri":
+                msg_err = f"Los certificados de ESRI requieren exactamente 2 archivos adjuntos para homologar en posgrados (se recibieron {len(resultados)})."
+            else:
+                msg_err = f"La asignatura seleccionada en este programa equivale a {creditos_asignados} crédito(s), por lo que se requieren exactamente {certificados_esperados} certificado(s) de Opened (se recibieron {len(resultados)})."
+            return jsonify({"error": msg_err}), 400
 
         primer_resultado = resultados[0]
         fecha_extraida = primer_resultado.get("fecha", "")
@@ -297,9 +376,7 @@ def generar_resolucion_final():
             pass
         fecha_actual = datetime.now().strftime("%d de %B de %Y")
 
-        # =============================
-        # CÁLCULO DE PROMEDIO Y NOTA DEFINITIVA
-        # =============================
+
         notas_num = []
         for item in resultados:
             nota_str = item.get("nota", "0.0")
@@ -324,35 +401,10 @@ def generar_resolucion_final():
             else:
                 nota_definitiva = "0.0"
 
-        # =============================
-        # NORMALIZACIÓN DEL NOMBRE DEL ESTUDIANTE
-        # =============================
+
         nombre_estudiante = str(primer_resultado.get("estudiante", "")).strip().upper()
         if not nombre_estudiante or nombre_estudiante == "N/A":
             nombre_estudiante = "SIN NOMBRE"
-
-        mapa_creditos = {
-            # Sistemas y Telecomunicaciones
-            "ingeniería en sistemas y telecomunicaciones presencial": "3",
-            "ingenieria en sistemas y telecomunicaciones virtual": "3",
-            # Analítica de Datos
-            "ingeniería en analítica de datos presencial": "2",
-            "ingenieria en analitica de datos virtual": "2",
-            # Logística
-            "ingeniería logística presencial": "3",
-            "ingenieria logistica virtual": "3",
-            # Seguridad de la Información
-            "ingeniería en seguridad de la información presencial": "3",
-            "ingenieria en seguridad de la informacion virtual": "3",
-            # Industrial
-            "ingeniería industrial": "2",
-            # Postgrados SIG (por defecto 3 créditos, editable)
-            "especialización en sistemas de información geográfica": "3",
-            "maestría en tecnologías de la información geográfica": "3",
-            # Maestría Educación
-            "maestría en educación y transformación digital": "2"
-        }
-        creditos_asignados = mapa_creditos.get(programa_destino.lower().strip(), "3")
 
         datos = {
             "fecha_resolucion": fecha_actual,

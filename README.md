@@ -81,17 +81,19 @@ El sistema asocia automáticamente la materia a homologar y el programa universi
 
 | Programa de Destino | Electiva I | Electiva II | Electiva III | Electiva IV |
 | :--- | :---: | :---: | :---: | :---: |
-| **Ingeniería en Sistemas y Telecomunicaciones Presencial** | `C5808002` | `C5909002` | — | — |
-| **Ingeniería en Sistemas y Telecomunicaciones Virtual** | `CV050036` | `CV050039` | — | — |
-| **Ingeniería en Analítica de Datos Presencial** | `IA030606` | `IA030707` | `IA030807` | — |
-| **Ingeniería en Analítica de Datos Virtual** | `10410606` | `10410706` | `10410805` | — |
-| **Ingeniería Logística Presencial** | `IL020403` | `IL020603` | `IL020703` | `IL020803` |
-| **Ingeniería Logística Virtual** | `10310403` | `10310603` | `10310704` | `10310803` |
-| **Ingeniería en Seguridad de la Información Presencial** | `IS040606` | `IS040804` | — | — |
-| **Ingeniería en Seguridad de la Información Virtual** | `10510606` | `10510804` | — | — |
+| **Ingeniería en Sistemas y Telecomunicaciones** | `C5808002` | `C5909002` | — | — |
+| **Ingeniería de Sistemas (Virtual)** | `CV050036` | `CV050039` | — | — |
+| **Ingeniería en Analítica de Datos (Presencial)** | `IA030606` | `IA030707` | `IA030807` | — |
+| **Ingeniería en Analítica de Datos (Virtual)** | `10410606` | `10410706` | `10410805` | — |
+| **Ingeniería Logística (Presencial)** | `IL020403` | `IL020603` | `IL020703` | `IL020803` |
+| **Ingeniería Logística (Virtual)** | `10310403` | `10310603` | `10310704` | `10310803` |
+| **Ingeniería en Seguridad de la Información (Presencial)** | `IS040606` | `IS040804` | — | — |
+| **Ingeniería en Seguridad de la Información (Virtual)** | `10510606` | `10510804` | — | — |
 | **Ingeniería Industrial** | `10710405` | `10710503` | — | — |
-| **Especialización en Sistemas de Información Geográfica** | `83060204` | `83060207` | — | — |
-| **Maestría en Tecnologías de la Información Geográfica** | `M8040106` | `M8040206` | — | — |
+| **Especialización en Sistemas de Información Geográfica (Presencial)** | `83060204` | `83060207` | — | — |
+| **Especialización en Sistemas de Información Geográfica (Virtual)** | `83060204` | `83060207` | — | — |
+| **Maestría en Tecnologías de la Información Geográfica (Presencial)** | `M8040106` | `M8040206` | — | — |
+| **Maestría en Tecnologías de la Información Geográfica (Virtual)** | `M8040106` | `M8040206` | — | — |
 | **Maestría en Educación y Transformación Digital** | `M1510102` | `M1510103` | `M1510204` | `M1510303` |
 
 ---
