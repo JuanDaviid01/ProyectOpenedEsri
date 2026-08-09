@@ -41,8 +41,7 @@ function mostrarToast(mensaje, titulo = '', tipo = 'info', duracion = 4000) {
     }
 }
 
-// MAPEO DE ELECTIVAS DISPONIBLES POR PROGRAMA
-const ELECTIVAS_POR_PROGRAMA = {
+let ELECTIVAS_POR_PROGRAMA = {
     "Ingeniería en Sistemas y Telecomunicaciones": ["Electiva I", "Electiva II"],
     "Ingeniería de Sistemas (Virtual)": ["Electiva I", "Electiva II"],
     "Ingeniería en Analítica de Datos (Presencial)": ["Electiva I", "Electiva II", "Electiva III"],
@@ -218,18 +217,29 @@ function actualizarComportamientoTipoNota() {
 
 function actualizarOpcionesProveedor() {
     const programa = selectPrograma.value;
+    const optOpened = selectTipo ? selectTipo.querySelector('option[value="opened"]') : null;
 
     if (!programa) {
         if (optEsri) optEsri.disabled = false;
+        if (optOpened) optOpened.disabled = false;
         return;
     }
 
-    if (!esPosgrado(programa)) {
+    const provPermitido = PROVEEDORES_PERMITIDOS_POR_PROGRAMA[programa] || (esPosgrado(programa) ? 'ambos' : 'opened');
+
+    if (provPermitido === 'opened') {
         if (optEsri) optEsri.disabled = true;
+        if (optOpened) optOpened.disabled = false;
         selectTipo.value = 'opened';
+        actualizarComportamientoTipoNota();
+    } else if (provPermitido === 'esri') {
+        if (optEsri) optEsri.disabled = false;
+        if (optOpened) optOpened.disabled = true;
+        selectTipo.value = 'esri';
         actualizarComportamientoTipoNota();
     } else {
         if (optEsri) optEsri.disabled = false;
+        if (optOpened) optOpened.disabled = false;
     }
 }
 
@@ -316,7 +326,7 @@ function esPosgrado(programa) {
     return progNorm.includes('especializac') || progNorm.includes('maestri');
 }
 
-const CREDITOS_POR_PROGRAMA = {
+let CREDITOS_POR_PROGRAMA = {
     "Ingeniería en Sistemas y Telecomunicaciones": 3,
     "Ingeniería de Sistemas (Virtual)": 3,
     "Ingeniería en Analítica de Datos (Presencial)": 2,
@@ -333,6 +343,50 @@ const CREDITOS_POR_PROGRAMA = {
     "Maestría en Educación y Transformación Digital": 2
 };
 
+let PROVEEDORES_PERMITIDOS_POR_PROGRAMA = {};
+let CREDITOS_POR_ELECTIVA = {};
+
+async function cargarCatalogosDinamicos() {
+    if (!selectPrograma) return;
+    try {
+        const res = await fetch('/api/programas');
+        if (!res.ok) return;
+        const data = await res.json();
+        const programas = data.programas || [];
+
+        if (programas.length > 0) {
+            const valPrevio = selectPrograma.value;
+            selectPrograma.innerHTML = '<option value="" selected disabled>Seleccionar programa</option>';
+
+            programas.forEach(p => {
+                const electivasNombres = (p.electivas || []).map(e => e.nombre);
+                ELECTIVAS_POR_PROGRAMA[p.nombre] = electivasNombres;
+                CREDITOS_POR_PROGRAMA[p.nombre] = p.creditos_unidad || 3;
+                PROVEEDORES_PERMITIDOS_POR_PROGRAMA[p.nombre] = p.proveedores_permitidos || (p.nivel === 'posgrado' ? 'ambos' : 'opened');
+
+                (p.electivas || []).forEach(e => {
+                    CREDITOS_POR_ELECTIVA[`${p.nombre}_${e.nombre}`] = e.creditos || p.creditos_unidad || 3;
+                });
+
+                const opt = document.createElement('option');
+                opt.value = p.nombre;
+                opt.textContent = p.nombre;
+                selectPrograma.appendChild(opt);
+            });
+
+            if (valPrevio && ELECTIVAS_POR_PROGRAMA[valPrevio]) {
+                selectPrograma.value = valPrevio;
+            }
+        }
+    } catch (e) {
+        console.warn('Catálogo dinámico no disponible, usando local:', e);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    cargarCatalogosDinamicos();
+});
+
 function calcularCertificadosEsperados(programa, tipoCertificado) {
     const materias = obtenerMateriasSeleccionadas();
     if (materias.length === 0) return 0;
@@ -340,8 +394,12 @@ function calcularCertificadosEsperados(programa, tipoCertificado) {
     if (tipoCertificado === 'esri') {
         return materias.length * 2;
     }
-    const creditosUnidad = CREDITOS_POR_PROGRAMA[programa] || 3;
-    return materias.length * creditosUnidad;
+    let totalCreditos = 0;
+    materias.forEach(m => {
+        const c = CREDITOS_POR_ELECTIVA[`${programa}_${m}`] || CREDITOS_POR_PROGRAMA[programa] || 3;
+        totalCreditos += c;
+    });
+    return totalCreditos;
 }
 
 // Validar documentos
@@ -453,6 +511,45 @@ btnValidar.addEventListener('click', async () => {
             mostrarToast(`Se detectó el certificado del curso "${cursoDuplicado}" duplicado en el mismo lote. Adjunte certificados de cursos diferentes.`, "Certificado Duplicado", "error");
             return;
         }
+
+        // Validación de nota mínima aprobatoria (>= 3.0) para Opened
+        if (selectTipo.value === 'opened') {
+            for (const cert of datosCrudos) {
+                const notaVal = parseFloat(String(cert.nota || '0').replace(',', '.'));
+                if (!isNaN(notaVal) && notaVal < 3.0) {
+                    estudianteValidado = null;
+                    btnGenerar.disabled = true;
+                    mostrarToast(`El certificado del curso "${cert.curso}" no cumple con la nota mínima de aprobación (3.0). Nota obtenida: ${notaVal.toFixed(1)}.`, "Nota Insuficiente", "error");
+                    return;
+                }
+            }
+        }
+
+        // =========================================================================
+        // === DESCOMENTAR EL SIGUIENTE BLOQUE PARA ACTIVAR EN PRODUCCIÓN LA    ===
+        // === VALIDACIÓN DE VIGENCIA DE CERTIFICADOS DEL SEMESTRE ACTUAL EN JS ===
+        // =========================================================================
+        /*
+        const ahora = new Date();
+        const semestreActual = `${ahora.getFullYear()}-${ahora.getMonth() + 1 <= 6 ? 1 : 2}`;
+        for (const cert of datosCrudos) {
+            if (cert.fecha && cert.fecha !== 'N/A') {
+                const partes = cert.fecha.split('-');
+                if (partes.length >= 2) {
+                    const anioCert = partes[0];
+                    const mesCert = parseInt(partes[1], 10);
+                    const semCert = `${anioCert}-${mesCert <= 6 ? 1 : 2}`;
+                    if (semCert !== semestreActual) {
+                        estudianteValidado = null;
+                        btnGenerar.disabled = true;
+                        mostrarToast(`El certificado del curso "${cert.curso}" no corresponde al semestre actual (${semestreActual}). Semestre certificado: ${semCert}.`, "Certificado Vencido", "error");
+                        return;
+                    }
+                }
+            }
+        }
+        */
+        // =========================================================================
 
         const nombreManual = (inputNombreManual && inputNombreManual.value) ? inputNombreManual.value.trim() : '';
         const nombreFinal = (selectTipo.value === 'esri' && nombreManual) ? nombreManual : (datosCrudos[0].estudiante || '').trim();

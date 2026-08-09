@@ -1,10 +1,27 @@
 {
   "diana627": {
     "nombre": "diana milena giraldo",
-    "password_hash": "scrypt:32768:8:1$zPHp2UCWfXQnMqYB$c4402adf454e2f6d3d132eaadd5a4f33a7dca9ce445712d83534180950069121b4e9e12b1d77d471cb9cfbae004914dc9686c5e78f6fb3be5284de9a498ec3d0"
+    "password_hash": "scrypt:32768:8:1$zPHp2UCWfXQnMqYB$c4402adf454e2f6d3d132eaadd5a4f33a7dca9ce445712d83534180950069121b4e9e12b1d77d471cb9cfbae004914dc9686c5e78f6fb3be5284de9a498ec3d0",
+    "rol": "operador",
+    "estado": "aprobado"
   },
   "juandaviiid": {
     "nombre": "Juan David Gomez",
-    "password_hash": "scrypt:32768:8:1$AAbO776liESyGqYM$97a0a2953ac8fb4f20a985b81c468076bfcdbfb84cdb9767f95a2181d63ad1df19adb74e97c2cd2cd4a3d83fcb56e0fd0cea96cb3508af78e14f05013549d93e"
+    "password_hash": "scrypt:32768:8:1$AAbO776liESyGqYM$97a0a2953ac8fb4f20a985b81c468076bfcdbfb84cdb9767f95a2181d63ad1df19adb74e97c2cd2cd4a3d83fcb56e0fd0cea96cb3508af78e14f05013549d93e",
+    "rol": "operador",
+    "estado": "aprobado"
+  },
+  "admin": {
+    "nombre": "Administrador Institucional",
+    "password_hash": "scrypt:32768:8:1$YXU9ecFuOBiY1Ega$209468f3c85d9800de9e67b4521c36c82cc2f84f2d8136c310356b084b51f6a122530ed01ba6383f552196af78ce659bfbe01b7291069ebbed72785606b0d55d",
+    "rol": "admin",
+    "estado": "aprobado"
+  },
+  "lucass": {
+    "nombre": "lucas lorenzo",
+    "password_hash": "scrypt:32768:8:1$4N8t6ZDlx6JL5psV$a578b32dd4c82ca4f0411818a53465ee323b7cc2678715ac0f9e20725ee126419fd91f0fee6c35886bee9471d1586c5b8231f6e44add13671a458d7c491e35c9",
+    "rol": "operador",
+    "estado": "pendiente",
+    "fecha_registro": "2026-08-08T11:36:07.305276"
   }
 }

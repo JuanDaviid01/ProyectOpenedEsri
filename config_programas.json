@@ -1,0 +1,310 @@
+{
+  "programas": [
+    {
+      "id": "prog_sistemas_presencial",
+      "nombre": "Ingeniería en Sistemas y Telecomunicaciones",
+      "nivel": "pregrado",
+      "creditos_unidad": 3,
+      "electivas": [
+        {
+          "nombre": "Electiva I",
+          "codigo": "C5808002",
+          "creditos": 3
+        },
+        {
+          "nombre": "Electiva II",
+          "codigo": "C5909002",
+          "creditos": 3
+        }
+      ],
+      "proveedores_permitidos": "opened"
+    },
+    {
+      "id": "prog_sistemas_virtual",
+      "nombre": "Ingeniería de Sistemas (Virtual)",
+      "nivel": "pregrado",
+      "creditos_unidad": 3,
+      "electivas": [
+        {
+          "nombre": "Electiva I",
+          "codigo": "CV050036",
+          "creditos": 3
+        },
+        {
+          "nombre": "Electiva II",
+          "codigo": "CV050039",
+          "creditos": 3
+        }
+      ],
+      "proveedores_permitidos": "opened"
+    },
+    {
+      "id": "prog_analitica_presencial",
+      "nombre": "Ingeniería en Analítica de Datos (Presencial)",
+      "nivel": "pregrado",
+      "creditos_unidad": 2,
+      "electivas": [
+        {
+          "nombre": "Electiva I",
+          "codigo": "IA030606",
+          "creditos": 2
+        },
+        {
+          "nombre": "Electiva II",
+          "codigo": "IA030707",
+          "creditos": 2
+        },
+        {
+          "nombre": "Electiva III",
+          "codigo": "IA030807",
+          "creditos": 2
+        }
+      ],
+      "proveedores_permitidos": "opened"
+    },
+    {
+      "id": "prog_analitica_virtual",
+      "nombre": "Ingeniería en Analítica de Datos (Virtual)",
+      "nivel": "pregrado",
+      "creditos_unidad": 2,
+      "electivas": [
+        {
+          "nombre": "Electiva I",
+          "codigo": "10410606",
+          "creditos": 2
+        },
+        {
+          "nombre": "Electiva II",
+          "codigo": "10410706",
+          "creditos": 2
+        },
+        {
+          "nombre": "Electiva III",
+          "codigo": "10410805",
+          "creditos": 2
+        }
+      ],
+      "proveedores_permitidos": "opened"
+    },
+    {
+      "id": "prog_logistica_presencial",
+      "nombre": "Ingeniería Logística (Presencial)",
+      "nivel": "pregrado",
+      "creditos_unidad": 3,
+      "electivas": [
+        {
+          "nombre": "Electiva I",
+          "codigo": "IL020403",
+          "creditos": 3
+        },
+        {
+          "nombre": "Electiva II",
+          "codigo": "IL020603",
+          "creditos": 3
+        },
+        {
+          "nombre": "Electiva III",
+          "codigo": "IL020703",
+          "creditos": 3
+        },
+        {
+          "nombre": "Electiva IV",
+          "codigo": "IL020803",
+          "creditos": 3
+        }
+      ],
+      "proveedores_permitidos": "opened"
+    },
+    {
+      "id": "prog_logistica_virtual",
+      "nombre": "Ingeniería Logística (Virtual)",
+      "nivel": "pregrado",
+      "creditos_unidad": 3,
+      "electivas": [
+        {
+          "nombre": "Electiva I",
+          "codigo": "10310403",
+          "creditos": 3
+        },
+        {
+          "nombre": "Electiva II",
+          "codigo": "10310603",
+          "creditos": 3
+        },
+        {
+          "nombre": "Electiva III",
+          "codigo": "10310704",
+          "creditos": 3
+        },
+        {
+          "nombre": "Electiva IV",
+          "codigo": "10310803",
+          "creditos": 3
+        }
+      ],
+      "proveedores_permitidos": "opened"
+    },
+    {
+      "id": "prog_seguridad_presencial",
+      "nombre": "Ingeniería en Seguridad de la Información (Presencial)",
+      "nivel": "pregrado",
+      "creditos_unidad": 3,
+      "electivas": [
+        {
+          "nombre": "Electiva I",
+          "codigo": "IS040606",
+          "creditos": 3
+        },
+        {
+          "nombre": "Electiva II",
+          "codigo": "IS040804",
+          "creditos": 3
+        }
+      ],
+      "proveedores_permitidos": "opened"
+    },
+    {
+      "id": "prog_seguridad_virtual",
+      "nombre": "Ingeniería en Seguridad de la Información (Virtual)",
+      "nivel": "pregrado",
+      "creditos_unidad": 3,
+      "electivas": [
+        {
+          "nombre": "Electiva I",
+          "codigo": "10510606",
+          "creditos": 3
+        },
+        {
+          "nombre": "Electiva II",
+          "codigo": "10510804",
+          "creditos": 3
+        }
+      ],
+      "proveedores_permitidos": "opened"
+    },
+    {
+      "id": "prog_industrial",
+      "nombre": "Ingeniería Industrial",
+      "nivel": "pregrado",
+      "creditos_unidad": 2,
+      "electivas": [
+        {
+          "nombre": "Electiva I",
+          "codigo": "10710405",
+          "creditos": 2
+        },
+        {
+          "nombre": "Electiva II",
+          "codigo": "10710503",
+          "creditos": 2
+        }
+      ],
+      "proveedores_permitidos": "opened"
+    },
+    {
+      "id": "prog_esp_sig_presencial",
+      "nombre": "Especialización en Sistemas de Información Geográfica (Presencial)",
+      "nivel": "posgrado",
+      "creditos_unidad": 3,
+      "electivas": [
+        {
+          "nombre": "Electiva I",
+          "codigo": "83060204",
+          "creditos": 3
+        },
+        {
+          "nombre": "Electiva II",
+          "codigo": "83060207",
+          "creditos": 3
+        }
+      ],
+      "proveedores_permitidos": "ambos"
+    },
+    {
+      "id": "prog_esp_sig_virtual",
+      "nombre": "Especialización en Sistemas de Información Geográfica (Virtual)",
+      "nivel": "posgrado",
+      "creditos_unidad": 3,
+      "electivas": [
+        {
+          "nombre": "Electiva I",
+          "codigo": "83060204",
+          "creditos": 3
+        },
+        {
+          "nombre": "Electiva II",
+          "codigo": "83060207",
+          "creditos": 3
+        }
+      ],
+      "proveedores_permitidos": "ambos"
+    },
+    {
+      "id": "prog_mae_tig_presencial",
+      "nombre": "Maestría en Tecnologías de la Información Geográfica (Presencial)",
+      "nivel": "posgrado",
+      "creditos_unidad": 3,
+      "electivas": [
+        {
+          "nombre": "Electiva I",
+          "codigo": "M8040106",
+          "creditos": 3
+        },
+        {
+          "nombre": "Electiva II",
+          "codigo": "M8040206",
+          "creditos": 3
+        }
+      ],
+      "proveedores_permitidos": "ambos"
+    },
+    {
+      "id": "prog_mae_tig_virtual",
+      "nombre": "Maestría en Tecnologías de la Información Geográfica (Virtual)",
+      "nivel": "posgrado",
+      "creditos_unidad": 3,
+      "electivas": [
+        {
+          "nombre": "Electiva I",
+          "codigo": "M8040106",
+          "creditos": 3
+        },
+        {
+          "nombre": "Electiva II",
+          "codigo": "M8040206",
+          "creditos": 3
+        }
+      ],
+      "proveedores_permitidos": "ambos"
+    },
+    {
+      "id": "prog_mae_educacion",
+      "nombre": "Maestría en Educación y Transformación Digital",
+      "nivel": "posgrado",
+      "creditos_unidad": 2,
+      "electivas": [
+        {
+          "nombre": "Electiva I",
+          "codigo": "M1510102",
+          "creditos": 2
+        },
+        {
+          "nombre": "Electiva II",
+          "codigo": "M1510103",
+          "creditos": 2
+        },
+        {
+          "nombre": "Electiva III",
+          "codigo": "M1510204",
+          "creditos": 2
+        },
+        {
+          "nombre": "Electiva IV",
+          "codigo": "M1510303",
+          "creditos": 2
+        }
+      ],
+      "proveedores_permitidos": "ambos"
+    }
+  ]
+}

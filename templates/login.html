@@ -110,8 +110,11 @@
           body: JSON.stringify({ username, password })
         });
         const data = await res.json();
-        if (!res.ok) { mostrarMensaje(data.error, true); return; }
-        window.location.href = '/app';
+        if (data.rol === 'admin') {
+          window.location.href = '/admin';
+        } else {
+          window.location.href = '/app';
+        }
       } catch {
         mostrarMensaje('Error de conexión con el servidor.', true);
       }
@@ -138,13 +141,17 @@
         const data = await res.json();
         if (!res.ok) { mostrarMensaje(data.error, true); return; }
 
-        // Registro exitoso: limpiar form y pedir que inicie sesión
+        // Registro exitoso: limpiar form y notificar estado
         document.getElementById('reg-nombre').value = '';
         document.getElementById('reg-usuario').value = '';
         document.getElementById('reg-password').value = '';
         document.getElementById('reg-confirmar').value = '';
         mostrarTab('login');
-        mostrarMensaje('Cuenta creada correctamente. Ahora inicia sesión.', false);
+        if (data.estado === 'pendiente') {
+          mostrarMensaje('Registro exitoso. Su cuenta está pendiente de aprobación por el Administrador.', false);
+        } else {
+          mostrarMensaje('Cuenta creada correctamente. Ya puede iniciar sesión.', false);
+        }
       } catch {
         mostrarMensaje('Error de conexión con el servidor.', true);
       }

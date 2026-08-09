@@ -19,6 +19,9 @@
     </div>
     <div class="barra-usuario">
       <span class="nombre-sesion">{{ nombre_usuario }}</span>
+      {% if es_admin %}
+      <a href="/admin" class="btn-admin-link">Panel Admin</a>
+      {% endif %}
       <a href="/logout" class="btn-logout">Cerrar sesión</a>
     </div>
   </header>
@@ -104,11 +107,13 @@
         </div>
 
         <div class="grupo-campo">
-          <label for="archivos">Cargar archivos</label>
+          <label for="archivos">Cargar certificados</label>
           <div class="zona-archivo">
             <input type="file" id="archivos" name="archivos" multiple>
-            <label for="archivos" class="btn-principal">Seleccionar archivos</label>
-            <span class="texto-archivo">Adjunte archivos en PDF, JPG o PNG</span>
+            <label for="archivos" class="btn-adjuntar-archivo">
+              <span>Seleccionar Certificados PDF, JPG, PNG</span>
+            </label>
+            <span class="texto-archivo">Arrastre y suelte sus archivos aquí o haga clic en el botón</span>
           </div>
         </div>
 

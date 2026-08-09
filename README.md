@@ -15,6 +15,7 @@ El sistema procesa certificados digitales emitidos por las plataformas **Opened*
 
 ## Características Principales
 
+- **Panel de Administración y Control de Accesos (`/admin`):** Módulo seguro para la aprobación de nuevos usuarios registrados, gestión de roles (`admin` / `operador`) y administración dinámica del catálogo de programas, electivas y códigos de asignatura sin tocar código.
 - **Soporte Multi-Proveedor (Opened & ESRI):** Extracción automatizada adaptada a la estructura de certificados de ambas plataformas.
 - **Asignación Dinámica de Códigos y Créditos:** Matriz de programas y electivas (*Electiva I*, *Electiva II*, *Electiva III*, *Electiva IV*) que mapea automáticamente los códigos institucionales de asignatura y los créditos correspondientes.
 - **Validación Determinística de Seguridad:** Verificación de integridad de nombres de estudiantes por lote para evitar homologaciones cruzadas.

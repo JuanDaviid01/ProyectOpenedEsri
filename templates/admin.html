@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Administración — Universidad de Manizales</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <header class="barra-opened">
+    <div class="logo-capsula">
+      <a href="https://www.umanizales.edu.co/" target="_blank">
+        <img src="{{ url_for('static', filename='logoum.png') }}" alt="Universidad de Manizales" class="logo-opened">
+      </a>
+    </div>
+    <div class="barra-usuario">
+      <span class="nombre-sesion">Admin: {{ nombre_usuario }}</span>
+      <a href="/app" class="btn-admin-link">Homologaciones</a>
+      <a href="/logout" class="btn-logout">Cerrar sesión</a>
+    </div>
+  </header>
+
+  <div class="admin-container">
+    <div class="admin-header-card">
+      <div class="admin-title-group">
+        <h1>Centro de Control Institucional</h1>
+        <p>Gestione la aprobación de usuarios, perfiles de acceso y el catálogo dinámico de programas académicos.</p>
+      </div>
+    </div>
+
+    <!-- PESTAÑAS -->
+    <div class="admin-tabs">
+      <button class="admin-tab-btn activo" id="tab-btn-usuarios" onclick="cambiarSeccion('usuarios')">
+        Usuarios Registrados <span class="badge-pendientes" id="badge-pendientes-count">0</span>
+      </button>
+      <button class="admin-tab-btn" id="tab-btn-programas" onclick="cambiarSeccion('programas')">
+        Catálogo de Programas y Asignaturas
+      </button>
+    </div>
+
+    <!-- SECCIÓN USUARIOS -->
+    <div class="admin-sec-card" id="sec-usuarios">
+      <div class="sec-header">
+        <h2>Gestión y Aprobación de Usuarios</h2>
+      </div>
+
+      <div class="tabla-responsive">
+        <table class="tabla-admin">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Nombre Completo</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th>Acciones de Verificación</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-usuarios">
+            <tr>
+              <td colspan="5" class="texto-cargando">Cargando lista de usuarios...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SECCIÓN PROGRAMAS -->
+    <div class="admin-sec-card sec-oculta" id="sec-programas">
+      <div class="sec-header">
+        <h2>Programas Académicos y Oferta de Electivas</h2>
+        <button type="button" class="btn-principal btn-sm" onclick="abrirModalPrograma()">+ Agregar Nuevo Programa</button>
+      </div>
+
+      <div class="grid-programas" id="grid-programas">
+        <!-- Renderizado dinámico de programas -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CREAR/EDITAR PROGRAMA -->
+  <div id="modal-programa" class="modal-overlay">
+    <div class="modal-container">
+      <h3 id="modal-prog-titulo" class="modal-titulo">Agregar Nuevo Programa</h3>
+      <form id="form-programa" onsubmit="guardarPrograma(event)">
+        <input type="hidden" id="prog-id">
+        <div class="grupo-campo mb-12">
+          <label for="prog-nombre">Nombre Oficial del Programa</label>
+          <input type="text" id="prog-nombre" required placeholder="Ej: Ingeniería de Datos (Virtual)">
+        </div>
+        <div class="flex-row gap-12 mb-12">
+          <div class="grupo-campo flex-1">
+            <label for="prog-nivel">Nivel Académico</label>
+            <select id="prog-nivel">
+              <option value="pregrado">Pregrado</option>
+              <option value="posgrado">Posgrado (Especialización/Maestría)</option>
+            </select>
+          </div>
+          <div class="grupo-campo flex-1">
+            <label for="prog-proveedores">Proveedores Permitidos</label>
+            <select id="prog-proveedores">
+              <option value="ambos">Ambos (Opened y ESRI)</option>
+              <option value="opened">Solo Opened</option>
+              <option value="esri">Solo ESRI</option>
+            </select>
+          </div>
+        </div>
+
+        <h4 class="subtitulo-seccion">Electivas, Créditos y Códigos Institucionales</h4>
+        <div id="contenedor-electivas-form">
+          <!-- Filas dinámicas de electivas -->
+        </div>
+        <button type="button" onclick="agregarFilaElectivaForm()" class="btn-add-fila">+ Añadir Electiva</button>
+
+        <div class="modal-acciones">
+          <button type="button" onclick="cerrarModalPrograma()" class="btn-cancelar">Cancelar</button>
+          <button type="submit" class="btn-principal btn-guardar">Guardar Programa</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+  <script src="{{ url_for('static', filename='admin.js') }}"></script>
+</body>
+
+</html>

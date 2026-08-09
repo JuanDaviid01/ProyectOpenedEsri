@@ -10,6 +10,8 @@ from pathlib import Path
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 # pyrefly: ignore [missing-import]
+from functools import wraps
+# pyrefly: ignore [missing-import]
 from flask import Flask, request, jsonify, render_template, send_file, session, redirect, url_for, make_response
 from flask_cors import CORS
 from services import extractor_pdf, generador_doc
@@ -25,111 +27,39 @@ def es_posgrado(programa):
     prog_norm = normalizar_texto(programa)
     return "especializac" in prog_norm or "maestri" in prog_norm
 
-CODIGOS_ASIGNATURAS = {
-    # 1. Sistemas y Telecomunicaciones
-    "ingenieria en sistemas y telecomunicaciones": {
-        "electiva i": "C5808002",
-        "electiva ii": "C5909002",
-    },
+def obtener_semestre_actual():
+    ahora = datetime.now()
+    semestre = 1 if ahora.month <= 6 else 2
+    return f"{ahora.year}-{semestre}"
 
-    # 2. Sistemas (Virtual)
-    "ingenieria de sistemas (virtual)": {
-        "electiva i": "CV050036",
-        "electiva ii": "CV050039",
-    },
+def obtener_semestre_fecha(fecha_str):
+    if not fecha_str or str(fecha_str).strip() in ["N/A", "n/a", ""]:
+        return None
+    iso_match = re.match(r"^(\d{4})-(\d{2})-(\d{2})$", str(fecha_str).strip())
+    if iso_match:
+        anio, mes_num, _ = iso_match.groups()
+        semestre = 1 if int(mes_num) <= 6 else 2
+        return f"{anio}-{semestre}"
+    
+    patron_anio = re.search(r"\b(20\d{2})\b", str(fecha_str))
+    if patron_anio:
+        anio = patron_anio.group(1)
+        meses_dict = {
+            "enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5, "junio": 6,
+            "julio": 7, "agosto": 8, "septiembre": 9, "octubre": 10, "noviembre": 11, "diciembre": 12
+        }
+        for nombre_mes, mes_idx in meses_dict.items():
+            if nombre_mes in str(fecha_str).lower():
+                semestre = 1 if mes_idx <= 6 else 2
+                return f"{anio}-{semestre}"
+    return None
 
-    # 3. Analítica de datos
-    "ingenieria en analitica de datos (presencial)": {
-        "electiva i": "IA030606",
-        "electiva ii": "IA030707",
-        "electiva iii": "IA030807",
-    },
-    "ingenieria en analitica de datos (virtual)": {
-        "electiva i": "10410606",
-        "electiva ii": "10410706",
-        "electiva iii": "10410805",
-    },
-    # 4. Logística
-    "ingenieria logistica (presencial)": {
-        "electiva i": "IL020403",
-        "electiva ii": "IL020603",
-        "electiva iii": "IL020703",
-        "electiva iv": "IL020803",
-    },
-    "ingenieria logistica (virtual)": {
-        "electiva i": "10310403",
-        "electiva ii": "10310603",
-        "electiva iii": "10310704",
-        "electiva iv": "10310803",
-    },
-    # 5. Seguridad de la información
-    "ingenieria en seguridad de la informacion (presencial)": {
-        "electiva i": "IS040606",
-        "electiva ii": "IS040804",
-    },
-    "ingenieria en seguridad de la informacion (virtual)": {
-        "electiva i": "10510606",
-        "electiva ii": "10510804",
-    },
-    # 6. Industrial
-    "ingenieria industrial": {
-        "electiva i": "10710405",
-        "electiva ii": "10710503",
-    },
-    # 7. Especialización en SIG (Presencial y Virtual)
-    "especializacion en sistemas de informacion geografica (presencial)": {
-        "electiva i": "83060204",
-        "electiva ii": "83060207",
-    },
-    "especializacion en sistemas de informacion geografica (virtual)": {
-        "electiva i": "83060204",
-        "electiva ii": "83060207",
-    },
-    # 8. Maestría en TIG (Presencial y Virtual)
-    "maestria en tecnologias de la informacion geografica (presencial)": {
-        "electiva i": "M8040106",
-        "electiva ii": "M8040206",
-    },
-    "maestria en tecnologias de la informacion geografica (virtual)": {
-        "electiva i": "M8040106",
-        "electiva ii": "M8040206",
-    },
-    # 9. Maestría en Educación y Transformación Digital
-    "maestria en educacion y transformacion digital": {
-        "electiva i": "M1510102",
-        "electiva ii": "M1510103",
-        "electiva iii": "M1510204",
-        "electiva iv": "M1510303",
-    }
-}
-
-MAPA_CREDITOS = {
-    # Sistemas y Telecomunicaciones
-    "ingenieria en sistemas y telecomunicaciones": "3",
-    "ingenieria en sistemas y telecomunicaciones (presencial)": "3",
-    "ingenieria de sistemas (virtual)": "3",
-    "ingenieria en sistemas y telecomunicaciones (virtual)": "3",
-    # Analítica de Datos
-    "ingenieria en analitica de datos (presencial)": "2",
-    "ingenieria en analitica de datos (virtual)": "2",
-    # Logística
-    "ingenieria logistica (presencial)": "3",
-    "ingenieria logistica (virtual)": "3",
-    # Seguridad de la Información
-    "ingenieria en seguridad de la informacion (presencial)": "3",
-    "ingenieria en seguridad de la informacion (virtual)": "3",
-    # Industrial
-    "ingenieria industrial": "2",
-    # Postgrados SIG
-    "especializacion en sistemas de informacion geografica": "3",
-    "especializacion en sistemas de informacion geografica (presencial)": "3",
-    "especializacion en sistemas de informacion geografica (virtual)": "3",
-    "maestria en tecnologias de la informacion geografica": "3",
-    "maestria en tecnologias de la informacion geografica (presencial)": "3",
-    "maestria en tecnologias de la informacion geografica (virtual)": "3",
-    # Maestría Educación
-    "maestria en educacion y transformacion digital": "2"
-}
+def validar_vigencia_semestre_cert(fecha_str, curso_nombre):
+    semestre_actual = obtener_semestre_actual()
+    semestre_cert = obtener_semestre_fecha(fecha_str)
+    if semestre_cert and semestre_cert != semestre_actual:
+        return False, f"El certificado del curso '{curso_nombre}' no corresponde al semestre actual ({semestre_actual}). Semestre detectado: {semestre_cert}."
+    return True, ""
 
 app = Flask(__name__)
 app.secret_key = "opened-esri-secret-2025"
@@ -137,6 +67,7 @@ app.config["SESSION_PERMANENT"] = False
 CORS(app)
 
 USUARIOS_FILE = Path(__file__).resolve().parent / "usuarios.json"
+PROGRAMAS_FILE = Path(__file__).resolve().parent / "config_programas.json"
 
 def cargar_usuarios():
     if not USUARIOS_FILE.exists():
@@ -150,6 +81,47 @@ def cargar_usuarios():
 def guardar_usuarios(usuarios):
     with open(USUARIOS_FILE, "w", encoding="utf-8") as f:
         json.dump(usuarios, f, ensure_ascii=False, indent=2)
+
+def cargar_programas_config():
+    if not PROGRAMAS_FILE.exists():
+        return {"programas": []}
+    with open(PROGRAMAS_FILE, "r", encoding="utf-8") as f:
+        try:
+            return json.load(f)
+        except json.JSONDecodeError:
+            return {"programas": []}
+
+def guardar_programas_config(data):
+    with open(PROGRAMAS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+def obtener_programas_mapeados():
+    data = cargar_programas_config()
+    mapa_codigos = {}
+    mapa_creditos_materia = {}
+    mapa_proveedores = {}
+    for prog in data.get("programas", []):
+        p_norm = normalizar_texto(prog["nombre"])
+        mapa_proveedores[p_norm] = prog.get("proveedores_permitidos", "ambos")
+        electivas_map = {}
+        creditos_map = {}
+        for ele in prog.get("electivas", []):
+            e_norm = normalizar_texto(ele["nombre"])
+            electivas_map[e_norm] = ele.get("codigo", "")
+            creditos_map[e_norm] = int(ele.get("creditos", prog.get("creditos_unidad", 3)))
+        mapa_codigos[p_norm] = electivas_map
+        mapa_creditos_materia[p_norm] = creditos_map
+    return mapa_codigos, mapa_creditos_materia, mapa_proveedores
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get("usuario") or session.get("rol") != "admin":
+            if request.path.startswith("/api/"):
+                return jsonify({"error": "Acceso restringido a Administradores de la Facultad."}), 403
+            return redirect(url_for("login_page"))
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 @app.route("/login", methods=["GET"])
@@ -175,9 +147,16 @@ def api_login():
     if not usuario or not check_password_hash(usuario["password_hash"], password):
         return jsonify({"error": "Usuario o contraseña incorrectos."}), 401
 
+    estado = usuario.get("estado", "aprobado")
+    if estado == "pendiente":
+        return jsonify({"error": "Su cuenta está pendiente de aprobación por el Administrador de la Facultad."}), 403
+    if estado == "rechazado":
+        return jsonify({"error": "Su cuenta ha sido inhabilitada por el Administrador."}), 403
+
     session["usuario"] = username
     session["nombre"] = usuario["nombre"]
-    return jsonify({"ok": True, "nombre": usuario["nombre"]})
+    session["rol"] = usuario.get("rol", "operador")
+    return jsonify({"ok": True, "nombre": usuario["nombre"], "rol": session["rol"]})
 
 @app.route("/api/registro", methods=["POST"])
 def api_registro():
@@ -201,13 +180,20 @@ def api_registro():
     if username in usuarios:
         return jsonify({"error": "Ese nombre de usuario ya existe."}), 409
 
+    es_primer_usuario = (len(usuarios) == 0) or (username in ["admin", "juandaviiid"])
+    rol_inicial = "admin" if es_primer_usuario else "operador"
+    estado_inicial = "aprobado" if es_primer_usuario else "pendiente"
+
     usuarios[username] = {
         "nombre": nombre,
-        "password_hash": generate_password_hash(password)
+        "password_hash": generate_password_hash(password),
+        "rol": rol_inicial,
+        "estado": estado_inicial,
+        "fecha_registro": datetime.now().isoformat()
     }
     guardar_usuarios(usuarios)
 
-    return jsonify({"ok": True, "registrado": True})
+    return jsonify({"ok": True, "registrado": True, "estado": estado_inicial})
 
 @app.route("/logout")
 def logout():
@@ -225,10 +211,142 @@ def index():
 def app_page():
     if not session.get("usuario"):
         return redirect(url_for("login_page"))
-    resp = make_response(render_template("index.html", nombre_usuario=session["nombre"]))
+    es_admin = (session.get("rol") == "admin")
+    resp = make_response(render_template("index.html", nombre_usuario=session["nombre"], es_admin=es_admin))
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     resp.headers["Pragma"] = "no-cache"
     return resp
+
+@app.route("/admin")
+@admin_required
+def admin_page():
+    resp = make_response(render_template("admin.html", nombre_usuario=session["nombre"]))
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    return resp
+
+@app.route("/api/programas", methods=["GET"])
+def api_obtener_programas():
+    config_data = cargar_programas_config()
+    return jsonify(config_data)
+
+@app.route("/api/admin/usuarios", methods=["GET"])
+@admin_required
+def api_admin_listar_usuarios():
+    usuarios = cargar_usuarios()
+    res = {}
+    for k, v in usuarios.items():
+        res[k] = {
+            "nombre": v.get("nombre", ""),
+            "rol": v.get("rol", "operador"),
+            "estado": v.get("estado", "aprobado"),
+            "fecha_registro": v.get("fecha_registro", "")
+        }
+    return jsonify(res)
+
+@app.route("/api/admin/usuarios/estado", methods=["POST"])
+@admin_required
+def api_admin_usuario_estado():
+    data = request.get_json() or {}
+    target_user = (data.get("username") or "").strip().lower()
+    nuevo_estado = (data.get("estado") or "").strip().lower()
+
+    if not target_user or nuevo_estado not in ["aprobado", "pendiente", "rechazado"]:
+        return jsonify({"error": "Parámetros inválidos."}), 400
+
+    usuarios = cargar_usuarios()
+    if target_user not in usuarios:
+        return jsonify({"error": "Usuario no encontrado."}), 404
+
+    usuarios[target_user]["estado"] = nuevo_estado
+    guardar_usuarios(usuarios)
+    return jsonify({"ok": True})
+
+@app.route("/api/admin/usuarios/rol", methods=["POST"])
+@admin_required
+def api_admin_usuario_rol():
+    data = request.get_json() or {}
+    target_user = (data.get("username") or "").strip().lower()
+    nuevo_rol = (data.get("rol") or "").strip().lower()
+
+    if not target_user or nuevo_rol not in ["admin", "operador"]:
+        return jsonify({"error": "Parámetros inválidos."}), 400
+
+    usuarios = cargar_usuarios()
+    if target_user not in usuarios:
+        return jsonify({"error": "Usuario no encontrado."}), 404
+
+    usuarios[target_user]["rol"] = nuevo_rol
+    guardar_usuarios(usuarios)
+    return jsonify({"ok": True})
+
+@app.route("/api/admin/usuarios/<username>", methods=["DELETE"])
+@admin_required
+def api_admin_eliminar_usuario(username):
+    target_user = username.strip().lower()
+    if target_user == session.get("usuario"):
+        return jsonify({"error": "No puede eliminar su propia cuenta de administrador en sesión."}), 400
+
+    usuarios = cargar_usuarios()
+    if target_user not in usuarios:
+        return jsonify({"error": "Usuario no encontrado."}), 404
+
+    del usuarios[target_user]
+    guardar_usuarios(usuarios)
+    return jsonify({"ok": True})
+
+@app.route("/api/admin/programas", methods=["POST"])
+@admin_required
+def api_admin_guardar_programa():
+    data = request.get_json() or {}
+    prog_id = (data.get("id") or "").strip()
+    nombre = (data.get("nombre") or "").strip()
+    nivel = (data.get("nivel") or "pregrado").strip().lower()
+    creditos_unidad = int(data.get("creditos_unidad", 3))
+    electivas = data.get("electivas", [])
+
+    if not nombre or not electivas:
+        return jsonify({"error": "Nombre del programa y al menos una electiva son requeridos."}), 400
+
+    config_data = cargar_programas_config()
+    programas = config_data.get("programas", [])
+
+    index_existente = -1
+    for idx, p in enumerate(programas):
+        if p["id"] == prog_id or normalizar_texto(p["nombre"]) == normalizar_texto(nombre):
+            index_existente = idx
+            break
+
+    nuevo_programa = {
+        "id": prog_id if prog_id else f"prog_{int(datetime.now().timestamp())}",
+        "nombre": nombre,
+        "nivel": nivel,
+        "creditos_unidad": creditos_unidad,
+        "electivas": electivas
+    }
+
+    if index_existente >= 0:
+        programas[index_existente] = nuevo_programa
+    else:
+        programas.append(nuevo_programa)
+
+    config_data["programas"] = programas
+    guardar_programas_config(config_data)
+    return jsonify({"ok": True})
+
+@app.route("/api/admin/programas/<prog_id>", methods=["DELETE"])
+@admin_required
+def api_admin_eliminar_programa(prog_id):
+    config_data = cargar_programas_config()
+    programas = config_data.get("programas", [])
+
+    programas_filtrados = [p for p in programas if p["id"] != prog_id]
+    if len(programas_filtrados) == len(programas):
+        return jsonify({"error": "Programa no encontrado."}), 404
+
+    config_data["programas"] = programas_filtrados
+    guardar_programas_config(config_data)
+    return jsonify({"ok": True})
 
 
 @app.route("/api/extraer", methods=["POST"])
@@ -246,10 +364,14 @@ def procesar_certificado():
         if not tipo_certificado:
             return jsonify({"error": "Se requiere especificar el tipo_certificado (opened o esri)."}), 400
 
-        if tipo_certificado == "esri" and programa_destino and not es_posgrado(programa_destino):
-            return jsonify({
-                "error": "Los certificados de ESRI solo están permitidos para programas de Posgrado (Especializaciones y Maestrías)."
-            }), 400
+        mapa_codigos_dyn, mapa_creditos_dyn, mapa_proveedores_dyn = obtener_programas_mapeados()
+        prog_norm = normalizar_texto(programa_destino)
+        prov_permitido = mapa_proveedores_dyn.get(prog_norm, "ambos")
+
+        if prov_permitido == "opened" and tipo_certificado == "esri":
+            return jsonify({"error": f"El programa '{programa_destino}' no permite certificados de ESRI (solo permite Opened)."}), 400
+        if prov_permitido == "esri" and tipo_certificado == "opened":
+            return jsonify({"error": f"El programa '{programa_destino}' no permite certificados de Opened (solo permite ESRI)."}), 400
 
         cursos_vistos = set()
         resultados_globales = []
@@ -283,6 +405,31 @@ def procesar_certificado():
 
         if not resultados_globales:
             return jsonify({"error": "No se enviaron archivos válidos para procesar."}), 400
+
+        # Validar nota mínima aprobatoria (>= 3.0) para certificados cuantitativos Opened
+        if tipo_certificado == "opened":
+            for res in resultados_globales:
+                nota_raw = str(res.get("nota", "0.0")).strip()
+                try:
+                    nota_val = float(nota_raw.replace(",", "."))
+                    if nota_val < 3.0:
+                        return jsonify({
+                            "error": f"El certificado del curso '{res.get('curso')}' no cumple con la nota mínima de aprobación (3.0). Nota obtenida: {nota_val:.1f}."
+                        }), 400
+                except ValueError:
+                    if nota_raw.lower() not in ["aprobado", "aprobada"]:
+                        return jsonify({
+                            "error": f"El certificado del curso '{res.get('curso')}' no registra una nota aprobatoria válida."
+                        }), 400
+
+        # =========================================================================
+        # === DESCOMENTAR EL SIGUIENTE BLOQUE PARA ACTIVAR EN PRODUCCIÓN LA VALIDACION DE FECHA
+        # =========================================================================
+        # for res in resultados_globales:
+        #     es_vigente, msg_vigencia = validar_vigencia_semestre_cert(res.get("fecha"), res.get("curso"))
+        #     if not es_vigente:
+        #         return jsonify({"error": msg_vigencia}), 400
+        # =========================================================================
 
         return jsonify(resultados_globales), 200
 
@@ -345,28 +492,28 @@ def generar_resolucion_final():
         if not materias_lista:
             materias_lista = ["Electiva I"]
 
-        # Validar restricción de proveedor (ESRI solo para Posgrados)
-        if tipo_certificado == "esri" and not es_posgrado(programa_destino):
-            return jsonify({
-                "error": "Los certificados de ESRI solo están permitidos para programas de Posgrado (Especializaciones y Maestrías)."
-            }), 400
+        mapa_codigos_dyn, mapa_creditos_dyn, mapa_proveedores_dyn = obtener_programas_mapeados()
+        prog_norm = normalizar_texto(programa_destino)
+        prov_permitido = mapa_proveedores_dyn.get(prog_norm, "ambos")
 
-        # Validar cantidad acumulada de certificados según materias seleccionadas
-        creditos_unidad = int(MAPA_CREDITOS.get(normalizar_texto(programa_destino), "3"))
+        if prov_permitido == "opened" and tipo_certificado == "esri":
+            return jsonify({"error": f"El programa '{programa_destino}' no permite certificados de ESRI (solo permite Opened)."}), 400
+        if prov_permitido == "esri" and tipo_certificado == "opened":
+            return jsonify({"error": f"El programa '{programa_destino}' no permite certificados de Opened (solo permite ESRI)."}), 400
+
+        creditos_map_prog = mapa_creditos_dyn.get(prog_norm, {})
         num_materias = len(materias_lista)
 
         if tipo_certificado == "esri":
-            certs_por_materia = 2
             certificados_esperados = num_materias * 2
         else:
-            certs_por_materia = creditos_unidad
-            certificados_esperados = num_materias * creditos_unidad
+            certificados_esperados = sum(creditos_map_prog.get(normalizar_texto(m), 3) for m in materias_lista)
 
         if len(resultados) != certificados_esperados:
             if tipo_certificado == "esri":
-                msg_err = f"Ha seleccionado {num_materias} materia(s) en posgrado con ESRI (se requieren 2 certificados por materia, total {certificados_esperados}). Se recibieron {len(resultados)}."
+                msg_err = f"Ha seleccionado {num_materias} materia(s) con ESRI (se requieren 2 certificados por materia, total {certificados_esperados}). Se recibieron {len(resultados)}."
             else:
-                msg_err = f"Ha seleccionado {num_materias} materia(s) de {creditos_unidad} crédito(s) cada una (total {certificados_esperados} certificados para Opened). Se recibieron {len(resultados)}."
+                msg_err = f"Ha seleccionado {num_materias} materia(s) con Opened (total {certificados_esperados} crédito(s) / certificado(s) requeridos). Se recibieron {len(resultados)}."
             return jsonify({"error": msg_err}), 400
 
         primer_resultado = resultados[0]
@@ -429,28 +576,29 @@ def generar_resolucion_final():
 
         # Mapeo de códigos de asignatura y certificados por cada materia seleccionada
         materias_mapeadas = []
-        prog_norm = normalizar_texto(programa_destino)
-        mapa_prog = CODIGOS_ASIGNATURAS.get(prog_norm, {})
+        mapa_prog = mapa_codigos_dyn.get(prog_norm, {})
 
+        curr_idx = 0
         for idx, mat_nombre in enumerate(materias_lista):
             mat_norm = normalizar_texto(mat_nombre)
             codigo_asig = mapa_prog.get(mat_norm, "C5909002")
+            c_num = 2 if tipo_certificado == "esri" else creditos_map_prog.get(mat_norm, 3)
 
-            inicio_idx = idx * certs_por_materia
-            fin_idx = inicio_idx + certs_por_materia
-            certs_subgrupo = resultados[inicio_idx:fin_idx]
+            certs_subgrupo = resultados[curr_idx:curr_idx + c_num]
+            curr_idx += c_num
 
             materias_mapeadas.append({
                 "materia": mat_nombre,
                 "codigo_asignatura": codigo_asig,
-                "creditos": creditos_unidad,
+                "creditos": c_num,
                 "certificados": certs_subgrupo
             })
 
         # Mapeo retrocompatible para la resolución
         materia_homologar = materias_lista[0] if materias_lista else "Electiva I"
         codigo_asignatura = materias_mapeadas[0]["codigo_asignatura"] if materias_mapeadas else "C5909002"
-        creditos_asignados = str(creditos_unidad * num_materias)
+        total_creditos_num = sum(m["creditos"] for m in materias_mapeadas)
+        creditos_asignados = str(total_creditos_num)
 
         datos = {
             "fecha_resolucion": fecha_actual,
@@ -473,13 +621,6 @@ def generar_resolucion_final():
         #  Registro en Excel FCI y cálculo de consecutivo
         numero_resolucion = obtener_y_registrar_resolucion(datos, usuario=responsable_resolucion)
         datos["numero_resolucion"] = numero_resolucion
-
-        # Obtener código de asignatura dinámico según el programa y la electiva seleccionada
-        prog_norm = normalizar_texto(programa_destino)
-        mat_norm = normalizar_texto(materia_homologar)
-
-        mapa_prog = CODIGOS_ASIGNATURAS.get(prog_norm, {})
-        codigo_asignatura = mapa_prog.get(mat_norm, "C5909002")
 
         cursos = [{
             "periodo": "2025-2",
@@ -525,15 +666,6 @@ def generar_resolucion_final():
 
     except Exception as e:
         return jsonify({"error": f"Error generando resolución final: {str(e)}"}), 500
-
-@app.route("/descargar")
-def descargar_archivo():
-    ruta = request.args.get("ruta")
-
-    if not ruta or not os.path.exists(ruta):
-        return "Archivo no encontrado", 404
-
-    return send_file(ruta, as_attachment=True)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
